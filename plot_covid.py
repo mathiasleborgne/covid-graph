@@ -74,23 +74,19 @@ def log10_filter(x):
 country_info_log = country_info.copy()
 country_info_log["Cases"] = country_info_log["Cases"].apply(log10_filter)
 country_info_log["Deaths"] = country_info_log["Deaths"].apply(log10_filter)
-print(country_info_log)
 
 # linear regression
-# X = pd.to_datetime(country_info_log.iloc[:, 0]).astype(int).values.reshape(-1, 1)  # values converts it into a numpy array
-# # X = range(len(X_origin)).reshape(-1, 1)
-# print(country_info_log.index)
-# Y = country_info_log.iloc[:, 4].values.reshape(-1, 1)  # -1 means that calculate the dimension of rows, but have 1 column
-# print(X)
-# assert len(X) == len(X_origin)
-
-# print(Y)
-# linear_regressor = LinearRegression()  # create object for the class
-# linear_regressor.fit(X, Y)  # perform linear regression
-# Y_pred = linear_regressor.predict(X)  # make predictions
+dates_original = country_info_log["DateRep"]
+X = dates_original.to_numpy(dtype=np.float32).reshape(-1, 1)
+Y = country_info_log["Cases"].to_numpy().reshape(-1, 1)
+linear_regressor = LinearRegression()  # create object for the class
+linear_regressor.fit(X, Y)  # perform linear regression
+Y_pred = linear_regressor.predict(X)  # make predictions
+prediction = pd.Series(Y_pred.ravel(), name="Prediction", index=country_info_log.index)
+country_info_log = pd.concat([country_info_log, prediction], axis=1, sort=False)
 
 # Plot
-ax = country_info_log.plot(x='DateRep', y=['Cases', 'Deaths'])
+ax = country_info_log.plot(x='DateRep', y=['Cases', 'Deaths', 'Prediction'])
 plt.xlabel("date")
 plt.ylabel("log_10")
 

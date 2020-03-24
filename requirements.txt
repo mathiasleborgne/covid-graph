@@ -1,6 +1,6 @@
 matplotlib
 numpy
-pandas
+pandas >= 0.24.0
 requests
 tqdm
 sklearn
