@@ -50,12 +50,17 @@ def fetch_excel():
 
 if args.reload:
     fetch_excel()
-country = args.country
-world_info = pd.read_excel(file_name_output)
+try:
+    world_info = pd.read_excel(file_name_output)
+except FileNotFoundError as e:
+    fetch_excel()
+    world_info = pd.read_excel(file_name_output)
+
 world_info['date'] = world_info['DateRep']
 world_info = world_info.set_index(['date'])
 world_info.sort_values(by='date')
 print("Countries:", sorted(set(world_info['Countries and territories'])))
+country = args.country
 country_info = world_info[world_info['Countries and territories'].isin([country])]
 country_info = country_info.loc[:args.start_date]
 
