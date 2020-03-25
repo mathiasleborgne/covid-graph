@@ -88,19 +88,25 @@ def get_country_info_log(country_info):
 
 
 def make_linear_regression_log(country_info_log):
-    dates_original = country_info_log["DateRep"]
+    dates_original = country_info_log["DateRep"] # todo: use index directly
     X = dates_original.to_numpy(dtype=np.float32).reshape(-1, 1)
     Y = country_info_log["Cases"].to_numpy().reshape(-1, 1)
     linear_regressor = LinearRegression()  # create object for the class
     linear_regressor.fit(X, Y)  # perform linear regression
-    Y_pred = linear_regressor.predict(X)  # make predictions
+    number_days_future = 10
+
+    dates_extended = pd.date_range('2020-03-24', periods=number_days_future)
+    ix_dates_extended = pd.DatetimeIndex(dates_original).union(pd.DatetimeIndex(dates_extended))
+    country_info_log = country_info_log.reindex(ix_dates_extended)
+
+    X_extended = country_info_log.index.to_numpy(dtype=np.float32).reshape(-1, 1)
+    Y_pred = linear_regressor.predict(X_extended)  # make predictions
     prediction = pd.Series(Y_pred.ravel(), name="Prediction", index=country_info_log.index)
     return pd.concat([country_info_log, prediction], axis=1, sort=False)
 
-
 # Plot
 def plot_country_log(country_info_log, country):
-    ax = country_info_log.plot(x='DateRep', y=['Cases', 'Deaths', 'Prediction'])
+    ax = country_info_log.reset_index().plot(x='index', y=['Cases', 'Deaths', 'Prediction'])
     plt.xlabel("date")
     plt.ylabel("log_10")
     plt.title("{} - Log 10 cases/deaths".format(country))
