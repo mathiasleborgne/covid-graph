@@ -12,7 +12,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--reload", help="reload xlsx", action="store_true")
 parser.add_argument("--start_date", help="Date in format 2020-3-1", default='2020-3-1')
 parser.add_argument("--country", help="the country", default='France')
+parser.add_argument("--all", help="All countries", action="store_true")
 args = parser.parse_args()
+
+western_countries = [
+    "France",
+    "Spain",
+    "United_States_of_America",
+    "United_Kingdom",
+    "Italy",
+]
 
 # https://www.data.gouv.fr/fr/datasets/cas-confirmes-dinfection-au-covid-19-par-region/
 url_input = "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide"
@@ -96,10 +105,9 @@ def plot_country_log(country_info_log, country):
     ax = country_info_log.plot(x='DateRep', y=['Cases', 'Deaths', 'Prediction'])
     plt.xlabel("date")
     plt.ylabel("log_10")
-
+    plt.title("{} - Log 10 cases/deaths".format(country))
     folder_images = "saved_images"
     plt.savefig(os.path.join(folder_images, 'img_log10_{}.png'.format(country)))
-    plt.show()
 
 def process_plot_country(country):
     country_info = get_country_info(country)
@@ -107,4 +115,10 @@ def process_plot_country(country):
     country_info_log = make_linear_regression_log(country_info_log)
     plot_country_log(country_info_log, country)
 
-process_plot_country(args.country)
+if args.all:
+    countries = western_countries
+else:
+    countries = [args.country]
+for country in western_countries:
+    process_plot_country(country)
+plt.show()
