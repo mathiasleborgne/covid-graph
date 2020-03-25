@@ -60,9 +60,11 @@ world_info['date'] = world_info['DateRep']
 world_info = world_info.set_index(['date'])
 world_info.sort_values(by='date')
 print("Countries:", sorted(set(world_info['Countries and territories'])))
-country = args.country
-country_info = world_info[world_info['Countries and territories'].isin([country])]
-country_info = country_info.loc[:args.start_date]
+
+def get_country_info(country):
+    country_info = world_info[world_info['Countries and territories'].isin([country])]
+    return country_info.loc[:args.start_date]
+
 
 # log10
 def log10_filter(x):
@@ -71,25 +73,38 @@ def log10_filter(x):
     else:
         return np.log10(x)
 
-country_info_log = country_info.copy()
-country_info_log["Cases"] = country_info_log["Cases"].apply(log10_filter)
-country_info_log["Deaths"] = country_info_log["Deaths"].apply(log10_filter)
+def get_country_info_log(country_info):
+    country_info_log = country_info.copy()
+    country_info_log["Cases"] = country_info_log["Cases"].apply(log10_filter)
+    country_info_log["Deaths"] = country_info_log["Deaths"].apply(log10_filter)
+    return country_info_log
 
-# linear regression
-dates_original = country_info_log["DateRep"]
-X = dates_original.to_numpy(dtype=np.float32).reshape(-1, 1)
-Y = country_info_log["Cases"].to_numpy().reshape(-1, 1)
-linear_regressor = LinearRegression()  # create object for the class
-linear_regressor.fit(X, Y)  # perform linear regression
-Y_pred = linear_regressor.predict(X)  # make predictions
-prediction = pd.Series(Y_pred.ravel(), name="Prediction", index=country_info_log.index)
-country_info_log = pd.concat([country_info_log, prediction], axis=1, sort=False)
+
+def make_linear_regression_log(country_info_log):
+    dates_original = country_info_log["DateRep"]
+    X = dates_original.to_numpy(dtype=np.float32).reshape(-1, 1)
+    Y = country_info_log["Cases"].to_numpy().reshape(-1, 1)
+    linear_regressor = LinearRegression()  # create object for the class
+    linear_regressor.fit(X, Y)  # perform linear regression
+    Y_pred = linear_regressor.predict(X)  # make predictions
+    prediction = pd.Series(Y_pred.ravel(), name="Prediction", index=country_info_log.index)
+    return pd.concat([country_info_log, prediction], axis=1, sort=False)
+
 
 # Plot
-ax = country_info_log.plot(x='DateRep', y=['Cases', 'Deaths', 'Prediction'])
-plt.xlabel("date")
-plt.ylabel("log_10")
+def plot_country_log(country_info_log, country):
+    ax = country_info_log.plot(x='DateRep', y=['Cases', 'Deaths', 'Prediction'])
+    plt.xlabel("date")
+    plt.ylabel("log_10")
 
-folder_images = "saved_images"
-plt.savefig(os.path.join(folder_images, 'img_log10_{}.png'.format(country)))
-plt.show()
+    folder_images = "saved_images"
+    plt.savefig(os.path.join(folder_images, 'img_log10_{}.png'.format(country)))
+    plt.show()
+
+def process_plot_country(country):
+    country_info = get_country_info(country)
+    country_info_log = get_country_info_log(country_info)
+    country_info_log = make_linear_regression_log(country_info_log)
+    plot_country_log(country_info_log, country)
+
+process_plot_country(args.country)
