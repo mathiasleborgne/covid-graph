@@ -119,6 +119,6 @@ if args.all:
     countries = western_countries
 else:
     countries = [args.country]
-for country in western_countries:
+for country in countries:
     process_plot_country(country)
 plt.show()
