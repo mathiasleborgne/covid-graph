@@ -38,5 +38,5 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: saved_images
-        path: saved_images/img_log10_France.png
+        path: saved_images/*
 
