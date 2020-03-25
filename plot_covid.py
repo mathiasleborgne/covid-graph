@@ -26,7 +26,6 @@ western_countries = [
 # https://www.data.gouv.fr/fr/datasets/cas-confirmes-dinfection-au-covid-19-par-region/
 url_input = "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide"
 file_name_output = "COVID-19-geographic-disbtribution-worldwide.xlsx"
-fetch_excel = True
 folder_xlsx = "."
 
 def get_html_text(url_input):
@@ -73,7 +72,6 @@ print("Countries:", sorted(set(world_info['Countries and territories'])))
 def get_country_info(country):
     country_info = world_info[world_info['Countries and territories'].isin([country])]
     return country_info.loc[:args.start_date]
-
 
 # log10
 def log10_filter(x):
