@@ -34,3 +34,9 @@ jobs:
     - name: Main script
       run: |
         python plot_covid.py --reload --all
+    - name: Upload images artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: saved_images
+        path: img_log10_France.png
+
