@@ -9,6 +9,20 @@ from tqdm import tqdm
 from sklearn.linear_model import LinearRegression
 import argparse
 
+""" This script:
+        - gets an Excel file with all countries information
+        - makes a pandas, filtered by date
+        - computes a linear regression on the log10 figures, and predicts a few days ahead
+        - plots the figures and prediction
+
+    Todo:
+        - use a logarithmic yscale
+        - make a prediction for deaths
+        - check usage of dates, use index
+        - "with current trend, number of cases is multiplied by X every day"
+"""
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--reload", help="reload xlsx", action="store_true")
 parser.add_argument("--start_date", help="Date in format 2020-3-1", default='2020-3-1')
