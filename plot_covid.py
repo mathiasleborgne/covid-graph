@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import math
 import os
 import datetime
 import numpy as np
@@ -11,11 +12,12 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--reload", help="reload xlsx", action="store_true")
 parser.add_argument("--start_date", help="Date in format 2020-3-1", default='2020-3-1')
-parser.add_argument("--country", help="the country", default='France')
-parser.add_argument("--all", help="All countries", action="store_true")
+parser.add_argument("--country", help="Select a specific country", default='France')
+parser.add_argument("--all", help="All favorite countries", action="store_true")
+parser.add_argument("--days_predict", help="Number of days to predict in the future", default=10, type=int)
 args = parser.parse_args()
 
-western_countries = [
+favorite_countries = [
     "France",
     "Spain",
     "United_States_of_America",
@@ -80,47 +82,48 @@ def log10_filter(x):
     else:
         return np.log10(x)
 
-def get_country_info_log(country_info):
-    country_info_log = country_info.copy()
-    country_info_log["Cases"] = country_info_log["Cases"].apply(log10_filter)
-    country_info_log["Deaths"] = country_info_log["Deaths"].apply(log10_filter)
-    return country_info_log
+def add_country_info_log(country_info):
+    country_info["CasesLog"] = country_info["Cases"].apply(log10_filter)
+    country_info["DeathsLog"] = country_info["Deaths"].apply(log10_filter)
+    return country_info
 
 
-def make_linear_regression_log(country_info_log):
-    dates_original = country_info_log["DateRep"] # todo: use index directly
+def add_linear_regression_log_and_prediction(country_info):
+    dates_original = country_info["DateRep"] # todo: use index directly
     X = dates_original.to_numpy(dtype=np.float32).reshape(-1, 1)
-    Y = country_info_log["Cases"].to_numpy().reshape(-1, 1)
+    Y = country_info["CasesLog"].to_numpy().reshape(-1, 1)
     linear_regressor = LinearRegression()  # create object for the class
     linear_regressor.fit(X, Y)  # perform linear regression
-    number_days_future = 10
+    number_days_future = args.days_predict
 
     dates_extended = pd.date_range('2020-03-24', periods=number_days_future)
     ix_dates_extended = pd.DatetimeIndex(dates_original).union(pd.DatetimeIndex(dates_extended))
-    country_info_log = country_info_log.reindex(ix_dates_extended)
+    country_info = country_info.reindex(ix_dates_extended)
 
-    X_extended = country_info_log.index.to_numpy(dtype=np.float32).reshape(-1, 1)
+    X_extended = country_info.index.to_numpy(dtype=np.float32).reshape(-1, 1)
     Y_pred = linear_regressor.predict(X_extended)  # make predictions
-    prediction = pd.Series(Y_pred.ravel(), name="Prediction", index=country_info_log.index)
-    return pd.concat([country_info_log, prediction], axis=1, sort=False)
+    pow_10 = lambda x: math.pow(10, x)
+    prediction = pd.Series(Y_pred.ravel(), name="Prediction", index=country_info.index).apply(pow_10)
+    return pd.concat([country_info, prediction], axis=1, sort=False)
 
 # Plot
 def plot_country_log(country_info_log, country):
     ax = country_info_log.reset_index().plot(x='index', y=['Cases', 'Deaths', 'Prediction'])
+    ax.set_yscale('log')
     plt.xlabel("date")
-    plt.ylabel("log_10")
+    # plt.ylabel("log_10")
     plt.title("{} - Log 10 cases/deaths".format(country))
     folder_images = "saved_images"
     plt.savefig(os.path.join(folder_images, 'img_log10_{}.png'.format(country)))
 
 def process_plot_country(country):
     country_info = get_country_info(country)
-    country_info_log = get_country_info_log(country_info)
-    country_info_log = make_linear_regression_log(country_info_log)
-    plot_country_log(country_info_log, country)
+    country_info = add_country_info_log(country_info)
+    country_info = add_linear_regression_log_and_prediction(country_info)
+    plot_country_log(country_info, country)
 
 if args.all:
-    countries = western_countries
+    countries = favorite_countries
 else:
     countries = [args.country]
 for country in countries:
