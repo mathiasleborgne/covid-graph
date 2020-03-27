@@ -20,6 +20,7 @@ import argparse
         - make a prediction for deaths
         - check usage of dates, use index
         - "with current trend, number of cases is multiplied by X every day"
+        - use https://covid19api.com/#details
 """
 
 
@@ -37,6 +38,8 @@ favorite_countries = [
     "United_States_of_America",
     "United_Kingdom",
     "Italy",
+    "Belgium",
+    "Germany",
 ]
 
 # https://www.data.gouv.fr/fr/datasets/cas-confirmes-dinfection-au-covid-19-par-region/
