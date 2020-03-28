@@ -83,13 +83,25 @@ except FileNotFoundError as e:
     fetch_excel()
     world_info = pd.read_excel(file_name_output)
 
-world_info['date'] = world_info['DateRep']
+# Excel fields are:
+#    dateRep
+#    day
+#    month
+#    year
+#    cases
+#    deaths
+#    countriesAndTerritories
+#    geoId
+#    countryterritoryCode
+#    popData2018
+
+world_info['date'] = world_info['dateRep']
 world_info = world_info.set_index(['date'])
 world_info.sort_values(by='date')
-print("Countries:", sorted(set(world_info['Countries and territories'])))
+print("Countries:", sorted(set(world_info['countriesAndTerritories'])))
 
 def get_country_info(country):
-    country_info = world_info[world_info['Countries and territories'].isin([country])]
+    country_info = world_info[world_info['countriesAndTerritories'].isin([country])]
     return country_info.loc[:args.start_date]
 
 # log10
@@ -100,15 +112,15 @@ def log10_filter(x):
         return np.log10(x)
 
 def add_country_info_log(country_info):
-    country_info["CasesLog"] = country_info["Cases"].apply(log10_filter)
-    country_info["DeathsLog"] = country_info["Deaths"].apply(log10_filter)
+    country_info["casesLog"] = country_info["cases"].apply(log10_filter)
+    country_info["deathsLog"] = country_info["deaths"].apply(log10_filter)
     return country_info
 
 
 def add_linear_regression_log_and_prediction(country_info):
-    dates_original = country_info["DateRep"] # todo: use index directly
+    dates_original = country_info["dateRep"] # todo: use index directly
     X = dates_original.to_numpy(dtype=np.float32).reshape(-1, 1)
-    Y = country_info["CasesLog"].to_numpy().reshape(-1, 1)
+    Y = country_info["casesLog"].to_numpy().reshape(-1, 1)
     linear_regressor = LinearRegression()  # create object for the class
     linear_regressor.fit(X, Y)  # perform linear regression
     number_days_future = args.days_predict
@@ -125,7 +137,7 @@ def add_linear_regression_log_and_prediction(country_info):
 
 # Plot
 def plot_country_log(country_info_log, country):
-    ax = country_info_log.reset_index().plot(x='index', y=['Cases', 'Deaths', 'Prediction'])
+    ax = country_info_log.reset_index().plot(x='index', y=['cases', 'deaths', 'Prediction'])
     ax.set_yscale('log')
     plt.xlabel("date")
     # plt.ylabel("log_10")
