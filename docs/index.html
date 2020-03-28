@@ -37,6 +37,15 @@
             <h1 class="h2">Dashboard</h1>
           </div>
           <canvas class="my-4" id="myChart" width="900" height="380"></canvas> -->
+
+          <p class="text-justify">
+            Static files:
+            <ul class="list-group">
+              {% for static_file in site.static_files %}
+                <li class="list-group-item">{{ static_file.path }}</li>
+              {% endfor %}
+            </ul>
+          </p>
         </main>
       </div>
     </div>
