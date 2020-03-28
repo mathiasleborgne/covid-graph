@@ -137,7 +137,7 @@ def add_linear_regression_log_and_prediction(country_info):
 
 # Plot
 def plot_country_log(country_info_log, country):
-    ax = country_info_log.reset_index().plot(x='index', y=['cases', 'deaths', 'Prediction'])
+    ax = country_info_log.reset_index().plot(x='index', y=['cases', 'deaths', 'Prediction', 'popData2018'])
     ax.set_yscale('log')
     plt.xlabel("date")
     # plt.ylabel("log_10")
