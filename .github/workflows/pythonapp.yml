@@ -34,6 +34,9 @@ jobs:
     - name: Main script
       run: |
         python plot_covid.py --reload --all
+        mkdir docs/_site
+        mkdir docs/_site/assets
+        cp sample_image_france.png docs/_site/assets/
     - name: Upload images artifacts
       uses: actions/upload-artifact@v1
       with:
