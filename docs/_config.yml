@@ -37,7 +37,7 @@ plugins:
 # github pages settings
 lsi: false
 safe: true
-source: docs
+# source: docs
 incremental: false
 highlighter: rouge
 gist:
