@@ -29,7 +29,7 @@ parser.add_argument("--reload", help="reload xlsx", action="store_true")
 parser.add_argument("--start_date", help="Date in format 2020-3-1", default='2020-3-1')
 parser.add_argument("--country", help="Select a specific country", default='France')
 parser.add_argument("--all", help="All favorite countries", action="store_true")
-parser.add_argument("--days_predict", help="Number of days to predict in the future", default=10, type=int)
+parser.add_argument("--days_predict", help="Number of days to predict in the future", default=7, type=int)
 args = parser.parse_args()
 
 favorite_countries = [
@@ -118,43 +118,59 @@ def add_country_info_log(country_info):
 
 
 def add_linear_regression_log_and_prediction(country_info):
+    # fit linear regression
     dates_original = country_info["dateRep"] # todo: use index directly
     X = dates_original.to_numpy(dtype=np.float32).reshape(-1, 1)
     Y = country_info["casesLog"].to_numpy().reshape(-1, 1)
     linear_regressor = LinearRegression()  # create object for the class
     linear_regressor.fit(X, Y)  # perform linear regression
-    number_days_future = args.days_predict
 
-    dates_extended = pd.date_range('2020-03-24', periods=number_days_future)
+    # regression error
+    reg_error_pct = (1 - linear_regressor.score(X, Y)) * 100
+    print("Regression error: {} pct".format(reg_error_pct))
+
+    # predict
+    number_days_future = args.days_predict
+    dates_extended = pd.date_range(dates_original[0], periods=number_days_future)
     ix_dates_extended = pd.DatetimeIndex(dates_original).union(pd.DatetimeIndex(dates_extended))
     country_info = country_info.reindex(ix_dates_extended)
-
     X_extended = country_info.index.to_numpy(dtype=np.float32).reshape(-1, 1)
-    Y_pred = linear_regressor.predict(X_extended)  # make predictions
+    Y_pred = linear_regressor.predict(X_extended)
+
+    # compute daily multiplicative factor
     pow_10 = lambda x: math.pow(10, x)
+    # ln(Y) = a*t+b --> Y(t) = B*exp(a*t) --> Y(t+1) = B*exp(a)*exp(a*t) = exp(a)*Y(t)
+    coeff_daily = pow_10(Y_pred[1][0] - Y_pred[0][0])
+    daily_growth_pct = (coeff_daily - 1.) * 100
+    print("Cases grow of {} pct each day".format(daily_growth_pct))
+
+    # add to dataframe
     prediction = pd.Series(Y_pred.ravel(), name="Prediction", index=country_info.index).apply(pow_10)
-    return pd.concat([country_info, prediction], axis=1, sort=False)
+    return pd.concat([country_info, prediction], axis=1, sort=False), reg_error_pct, daily_growth_pct
 
 # Plot
-def plot_country_log(country_info_log, country):
-    ax = country_info_log.reset_index().plot(x='index', y=['cases', 'deaths', 'Prediction', 'popData2018'])
+def plot_country_log(country_info_log, country, reg_error_pct, daily_growth_pct):
+    ax = country_info_log.reset_index().plot(x='index', y=['cases', 'deaths', 'Prediction'])
     ax.set_yscale('log')
     plt.xlabel("date")
     # plt.ylabel("log_10")
-    plt.title("{} - Log 10 cases/deaths".format(country))
+    plt.title("{} - Cases/Deaths\n(Reg. error: {:.1f} pct / Daily growth: {:.1f} pct)"
+              .format(country, reg_error_pct, daily_growth_pct))
     folder_images = "saved_images"
     plt.savefig(os.path.join(folder_images, 'img_log10_{}.png'.format(country)))
 
 def process_plot_country(country):
     country_info = get_country_info(country)
     country_info = add_country_info_log(country_info)
-    country_info = add_linear_regression_log_and_prediction(country_info)
-    plot_country_log(country_info, country)
+    country_info, reg_error_pct, daily_growth_pct = \
+        add_linear_regression_log_and_prediction(country_info)
+    plot_country_log(country_info, country, reg_error_pct, daily_growth_pct)
 
 if args.all:
     countries = favorite_countries
 else:
     countries = [args.country]
 for country in countries:
+    print("Processing {}".format(country))
     process_plot_country(country)
 plt.show()
