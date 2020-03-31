@@ -17,7 +17,7 @@ import argparse
         - plots the figures and prediction
 
     Todo:
-        - use a logarithmic yscale
+        - use a logarithmic yscale
         - make a prediction for deaths
         - check usage of dates, use index
         - "with current trend, number of cases is multiplied by X every day"
@@ -30,6 +30,7 @@ parser.add_argument("--reload", help="reload xlsx", action="store_true")
 parser.add_argument("--start_date", help="Date in format 2020-3-1", default='2020-3-1')
 parser.add_argument("--country", help="Select a specific country", default='France')
 parser.add_argument("--all", help="All favorite countries", action="store_true")
+parser.add_argument("--show", help="Show images", action="store_true")
 parser.add_argument("--days_predict", help="Number of days to predict in the future", default=7, type=int)
 args = parser.parse_args()
 
@@ -155,8 +156,9 @@ def plot_country_log(country_info_log, country, reg_error_pct, daily_growth_pct)
     ax.set_yscale('log')
     plt.xlabel("date")
     # plt.ylabel("log_10")
-    plt.title("{} - Cases/Deaths\n(Reg. error: {:.1f} pct / Daily growth: {:.1f} pct)"
-              .format(country, reg_error_pct, daily_growth_pct))
+    if args.show:
+        plt.title("{} - Cases/Deaths\n(Reg. error: {:.1f} pct / Daily growth: {:.1f} pct)"
+                  .format(country, reg_error_pct, daily_growth_pct))
     folder_images = "saved_images"
     image_name = 'img_log10_{}.png'.format(country)
     plt.savefig(os.path.join(folder_images, image_name))
@@ -169,7 +171,12 @@ def process_plot_country(country):
     country_info, reg_error_pct, daily_growth_pct = \
         add_linear_regression_log_and_prediction(country_info)
     image_name = plot_country_log(country_info, country, reg_error_pct, daily_growth_pct)
-    return image_name
+    return {
+        "country": country,
+        "image_name": image_name,
+        "reg_error_pct": reg_error_pct,
+        "daily_growth_pct": daily_growth_pct,
+    }
 
 def save_json(file_name, content):
     with open(file_name, 'w') as outfile:
@@ -183,12 +190,10 @@ else:
 images_info = []
 for country in countries:
     print("Processing {}".format(country))
-    image_name = process_plot_country(country)
-    images_info.append({
-        "country": country,
-        "image_name": image_name,
-    })
+    image_info = process_plot_country(country)
+    images_info.append(image_info)
 
 save_json(os.path.join("docs", "_data", "images_info.json"), images_info)
 
-plt.show()
+if args.show:
+    plt.show()

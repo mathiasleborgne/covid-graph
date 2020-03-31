@@ -10,7 +10,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Yet another Covid-19 graph</title>
+    <title>Yet another Covid-19 plots website</title>
 
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
@@ -31,8 +31,11 @@
               <img src="./assets/img/{{ country_info.image_name }}" class="card-img-top" alt="{{ country_info.country }}">
               <div class="card-body">
                 <h5 class="card-title">{{ country_info.country }}</h5>
-                <!-- <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                <a href="#" class="btn btn-primary">Go somewhere</a> -->
+                <!-- <p class="card-text">dummy</p> -->
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item">Error in prediction: {{ country_info.reg_error_pct | round: 2}}%</li>
+                  <li class="list-group-item">Daily growth: {{ country_info.daily_growth_pct | round: 2}}%</li>
+                </ul>
               </div>
             </div>
           </div>
