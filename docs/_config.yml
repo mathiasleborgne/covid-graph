@@ -46,6 +46,12 @@ kramdown:
   math_engine: mathjax
   syntax_highlighter: rouge
 
+defaults:  # assets
+  - scope:
+      path: "assets/img"
+    values:
+      image: true
+
 # Exclude from processing.
 # The following items will not be processed, by default.
 # Any item listed under the `exclude:` key here will be automatically added to
