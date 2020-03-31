@@ -32,17 +32,16 @@
     <div class="container-fluid">
       <div class="row">
         <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
-            {% assign image_files = site.static_files | where: "image", true %}
-            {% for myimage in image_files %}
-              <img src=".{{ myimage.path }}" class="img-fluid" alt="Responsive image">
-            {% endfor %}
+          {% for country_info in site.data.images_info %}
+            <h1>{{ country_info.country  }}</h1>
+            <img src="./assets/img/{{ country_info.image_name }}" class="img-fluid" alt="Responsive image">
+          {% endfor %}
 
             <!-- Graph -->
 <!--           <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
             <h1 class="h2">Dashboard</h1>
           </div>
           <canvas class="my-4" id="myChart" width="900" height="380"></canvas> -->
-
         </main>
       </div>
     </div>
