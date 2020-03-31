@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import json
 import math
 import os
 import datetime
@@ -157,20 +158,37 @@ def plot_country_log(country_info_log, country, reg_error_pct, daily_growth_pct)
     plt.title("{} - Cases/Deaths\n(Reg. error: {:.1f} pct / Daily growth: {:.1f} pct)"
               .format(country, reg_error_pct, daily_growth_pct))
     folder_images = "saved_images"
-    plt.savefig(os.path.join(folder_images, 'img_log10_{}.png'.format(country)))
+    image_name = 'img_log10_{}.png'.format(country)
+    plt.savefig(os.path.join(folder_images, image_name))
+    plt.savefig(os.path.join("docs", "assets", "img", image_name))
+    return image_name
 
 def process_plot_country(country):
     country_info = get_country_info(country)
     country_info = add_country_info_log(country_info)
     country_info, reg_error_pct, daily_growth_pct = \
         add_linear_regression_log_and_prediction(country_info)
-    plot_country_log(country_info, country, reg_error_pct, daily_growth_pct)
+    image_name = plot_country_log(country_info, country, reg_error_pct, daily_growth_pct)
+    return image_name
+
+def save_json(file_name, content):
+    with open(file_name, 'w') as outfile:
+        json.dump(content, outfile)
 
 if args.all:
     countries = favorite_countries
 else:
     countries = [args.country]
+
+images_info = []
 for country in countries:
     print("Processing {}".format(country))
-    process_plot_country(country)
+    image_name = process_plot_country(country)
+    images_info.append({
+        "country": country,
+        "image_name": image_name,
+    })
+
+save_json(os.path.join("docs", "_data", "images_info.json"), images_info)
+
 plt.show()
