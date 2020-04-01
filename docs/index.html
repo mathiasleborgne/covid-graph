@@ -10,7 +10,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Yet another Covid-19 plots website</title>
+    <title>{{ site.title }}</title>
 
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
@@ -19,10 +19,39 @@
 
   <body>
     <nav class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0">
-      <a class="navbar-brand col-sm-4 col-md-4 mr-0" href="#">Yet Another Covid-19 Graph</a>
+      <a class="navbar-brand col-sm-4 col-md-4 mr-0" href="#">{{ site.title }}</a>
     </nav>
 
     <div class="container-fluid">
+
+      <div class="card">
+        <div class="card-body">
+          <blockquote class="blockquote">
+            <p class="mb-0">
+              This website shows the number of cases and deaths of Covid-19 by country.
+            </p>
+            <p class="mb-2">
+              As growth is currently exponential
+              (see explanation <a href="https://youtu.be/Kas0tIxDvrg">here</a>),
+              they are displayed in a logarithmic manner,
+              which means that each additional unit on the y-axis makes the number 10 times bigger).
+              Curves are compared to an exponential curve, with an error rate...
+              which will hopefully increase in the near future as the curves flatten.
+            </p>
+            <footer class="blockquote-footer">
+              Data source:
+              <cite title="Source Title">
+                <a href="https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide">ECDC</a>
+              </cite>
+              - Code:
+              <cite title="Source Title">
+                <a href="https://github.com/mathiasleborgne/covid-graph/">github.com/mathiasleborgne/covid-graph</a>
+              </cite>
+            </footer>
+          </blockquote>
+        </div>
+      </div>
+
       <div class="row">
         {% for country_info in site.data.images_info %}
           <div class="col-sm">
