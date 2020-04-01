@@ -29,7 +29,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--reload", help="reload xlsx", action="store_true")
 parser.add_argument("--start_date", help="Date in format 2020-3-1", default='2020-3-1')
 parser.add_argument("--country", help="Select a specific country", default='France')
-parser.add_argument("--all", help="All favorite countries", action="store_true")
+parser.add_argument("--favorite", help="Favorite countries", action="store_true")
+parser.add_argument("--all", help="All countries", action="store_true")
 parser.add_argument("--show", help="Show images", action="store_true")
 parser.add_argument("--days_predict", help="Number of days to predict in the future", default=7, type=int)
 args = parser.parse_args()
@@ -100,7 +101,11 @@ except FileNotFoundError as e:
 world_info['date'] = world_info['dateRep']
 world_info = world_info.set_index(['date'])
 world_info.sort_values(by='date')
-print("Countries:", sorted(set(world_info['countriesAndTerritories'])))
+countries_population_dict = dict(zip(world_info.countriesAndTerritories, world_info.popData2018))
+all_countries = [country
+                 for country, population in countries_population_dict.items()
+                 if population > 1000000.]
+print("Countries:", all_countries)
 
 def get_country_info(country):
     country_info = world_info[world_info['countriesAndTerritories'].isin([country])]
@@ -126,6 +131,7 @@ def add_linear_regression_log_and_prediction(country_info):
     Y = country_info["casesLog"].to_numpy().reshape(-1, 1)
     linear_regressor = LinearRegression()  # create object for the class
     linear_regressor.fit(X, Y)  # perform linear regression
+        # can raise ValueError if no case
 
     # regression error
     reg_error_pct = (1 - linear_regressor.score(X, Y)) * 100
@@ -182,18 +188,35 @@ def save_json(file_name, content):
     with open(file_name, 'w') as outfile:
         json.dump(content, outfile)
 
-if args.all:
-    countries = favorite_countries
-else:
-    countries = [args.country]
+def get_countries(world_info):
+    if args.favorite:
+        return favorite_countries
+    elif args.all:
+        not_favorite_countries = set(all_countries) - set(favorite_countries)
+        return favorite_countries + list(not_favorite_countries)
+    else:
+        return [args.country]
 
 images_info = []
-for country in countries:
-    print("Processing {}".format(country))
-    image_info = process_plot_country(country)
-    images_info.append(image_info)
+countries = get_countries(world_info)
+for index, country in enumerate(countries):
+    try:
+        print("Processing {} ({}/{})".format(country, index, len(countries)))
+        image_info = process_plot_country(country)
+        images_info.append(image_info)
+    except ValueError as e:
+        # should happen in linear regression if no value
+        print("No case found for {}".format(country))
+        continue
+
+global_info = {
+    "days_predict": args.days_predict,
+    "favorite_countries": favorite_countries,
+    "date_last_update": "" #todo,
+}
 
 save_json(os.path.join("docs", "_data", "images_info.json"), images_info)
+save_json(os.path.join("docs", "_data", "global_info.json"), global_info)
 
-if args.show:
+if args.show and images_info:
     plt.show()
