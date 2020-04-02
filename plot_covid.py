@@ -17,12 +17,11 @@ import argparse
         - plots the figures and prediction
 
     Todo:
-        - use a logarithmic yscale
         - make a prediction for deaths
         - remove all images when performing a reload? (might be harder with artifacts)
         - check usage of dates, use index
-        - "with current trend, number of cases is multiplied by X every day"
         - use https://covid19api.com/#details
+        - check logistic curve
 """
 
 
@@ -33,6 +32,7 @@ parser.add_argument("--country", help="Select a specific country", default='Fran
 parser.add_argument("--favorite", help="Favorite countries", action="store_true")
 parser.add_argument("--all", help="All countries", action="store_true")
 parser.add_argument("--show", help="Show images", action="store_true")
+parser.add_argument("--logistic", help="Use logistic regression", action="store_true")
 parser.add_argument("--days_predict", help="Number of days to predict in the future", default=7, type=int)
 args = parser.parse_args()
 
@@ -128,13 +128,29 @@ def log10_filter(x):
     else:
         return np.log10(x)
 
-def add_country_info_log(country_info):
-    country_info["casesLog"] = country_info["cases"].apply(log10_filter)
-    country_info["deathsLog"] = country_info["deaths"].apply(log10_filter)
+def logistics(z, l_max):
+    # logistics: y = l_max/(1+exp(a*x+b)) = l_max/(1+exp(z))
+    return l_max / (1. + np.exp(z))
+
+def inverse_logistics(y, l_max):
+    # inverse logistics is a*x+b = ln(l_max/y-1)
+    if y == 0. or y == l_max:
+        # todo:
+        # return np.nan
+        return 1.
+    return np.log((l_max / y) - 1.)
+
+def add_country_info_log(country_info, applied_func):
+    country_info["casesLog"] = country_info["cases"].apply(applied_func)
+    country_info["deathsLog"] = country_info["deaths"].apply(applied_func)
     return country_info
 
+def pow_10(x):
+    return math.pow(10, x)
 
-def add_linear_regression_log_and_prediction(country_info):
+
+
+def add_linear_regression_log_and_prediction(country_info, applied_func, inverse_func):
     # fit linear regression
     dates_original = country_info["dateRep"] # todo: use index directly
     X = dates_original.to_numpy(dtype=np.float32).reshape(-1, 1)
@@ -145,7 +161,6 @@ def add_linear_regression_log_and_prediction(country_info):
 
     # regression error
     reg_error_pct = (1 - linear_regressor.score(X, Y)) * 100
-    print("Regression error: {} pct".format(reg_error_pct))
 
     # predict
     number_days_future = args.days_predict
@@ -156,19 +171,23 @@ def add_linear_regression_log_and_prediction(country_info):
     Y_pred = linear_regressor.predict(X_extended)
 
     # compute daily multiplicative factor
-    pow_10 = lambda x: math.pow(10, x)
+        # todo: calculate once
+
     # ln(Y) = a*t+b --> Y(t) = B*exp(a*t) --> Y(t+1) = B*exp(a)*exp(a*t) = exp(a)*Y(t)
-    coeff_daily = pow_10(Y_pred[1][0] - Y_pred[0][0])
+    coeff_daily = applied_func(Y_pred[1][0] - Y_pred[0][0])
     daily_growth_pct = (coeff_daily - 1.) * 100
     print("Cases grow of {} pct each day".format(daily_growth_pct))
 
     # add to dataframe
-    prediction = pd.Series(Y_pred.ravel(), name="Prediction", index=country_info.index).apply(pow_10)
-    return pd.concat([country_info, prediction], axis=1, sort=False), reg_error_pct, daily_growth_pct
+    prediction_log = pd.Series(Y_pred.ravel(), name="PredictionLog", index=country_info.index)
+    prediction = pd.Series(Y_pred.ravel(), name="Prediction", index=country_info.index).apply(applied_func)
+    return pd.concat([country_info, prediction, prediction_log], axis=1, sort=False), reg_error_pct, daily_growth_pct
 
 # Plot
 def plot_country_log(country_info_log, country, reg_error_pct, daily_growth_pct):
     ax = country_info_log.reset_index().plot(x='index', y=['cases', 'deaths', 'Prediction'])
+    # ax = country_info_log.reset_index().plot(x='index', y=['casesLog', 'deathsLog', 'PredictionLog'])
+    # ax = country_info_log.reset_index().plot(x='index', y=['cases', 'deaths'])
     ax.set_yscale('log')
     plt.xlabel("date")
     # plt.ylabel("log_10")
@@ -186,9 +205,22 @@ def process_plot_country(country):
     cases_last_update = int(country_info["cases"][0])
     deaths_last_update = int(country_info["deaths"][0])
     print(cases_last_update)
-    country_info = add_country_info_log(country_info)
+
+    if args.logistic:
+        l_max = country_info["cases"].max()
+        applied_func = lambda z: logistics(z, l_max)
+        inverse_func = lambda y: inverse_logistics(y, l_max)
+    else:
+        applied_func = pow_10
+        inverse_func = log10_filter
+
+    country_info = add_country_info_log(country_info, inverse_func)
     country_info, reg_error_pct, daily_growth_pct = \
-        add_linear_regression_log_and_prediction(country_info)
+        add_linear_regression_log_and_prediction(
+            country_info, applied_func, inverse_func
+        )
+    print("Regression error: {} pct".format(reg_error_pct))
+
     image_name = plot_country_log(country_info, country, reg_error_pct, daily_growth_pct)
     cases_prediction = int(country_info["Prediction"][-1])
     return {
@@ -221,7 +253,9 @@ for index, country in enumerate(countries):
         print("Processing {} ({}/{})".format(country, index + 1, len(countries)))
         image_info = process_plot_country(country)
         images_info.append(image_info)
-    except ValueError as e:
+    except KeyError as e:
+        # todo: back to...
+            # except ValueError as e:
         # should happen in linear regression if no value
         print("No case found for {}".format(country))
         continue
