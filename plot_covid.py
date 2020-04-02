@@ -212,7 +212,7 @@ for index, country in enumerate(countries):
 global_info = {
     "days_predict": args.days_predict,
     "favorite_countries": favorite_countries,
-    "date_last_update": "" #todo,
+    "date_last_update": datetime.date.today().strftime("%B %d, %Y"),
 }
 
 save_json(os.path.join("docs", "_data", "images_info.json"), images_info)
