@@ -140,9 +140,9 @@ def inverse_logistics(y, l_max):
         return 1.
     return np.log((l_max / y) - 1.)
 
-def add_country_info_log(country_info, applied_func):
-    country_info["casesLog"] = country_info["cases"].apply(applied_func)
-    country_info["deathsLog"] = country_info["deaths"].apply(applied_func)
+def add_country_info_log(country_info, applied_func, column_suffix_inv):
+    country_info["cases" + column_suffix_inv] = country_info["cases"].apply(applied_func)
+    country_info["deaths" + column_suffix_inv] = country_info["deaths"].apply(applied_func)
     return country_info
 
 def pow_10(x):
@@ -150,11 +150,11 @@ def pow_10(x):
 
 
 
-def add_linear_regression_log_and_prediction(country_info, applied_func, inverse_func):
+def add_linear_regression_log_and_prediction(country_info, applied_func, inverse_func, column_suffix_inv, column_suffix_apply):
     # fit linear regression
     dates_original = country_info["dateRep"] # todo: use index directly
     X = dates_original.to_numpy(dtype=np.float32).reshape(-1, 1)
-    Y = country_info["casesLog"].to_numpy().reshape(-1, 1)
+    Y = country_info["cases" + column_suffix_inv].to_numpy().reshape(-1, 1)
     linear_regressor = LinearRegression()  # create object for the class
     linear_regressor.fit(X, Y)  # perform linear regression
         # can raise ValueError if no case
@@ -179,13 +179,13 @@ def add_linear_regression_log_and_prediction(country_info, applied_func, inverse
     print("Cases grow of {} pct each day".format(daily_growth_pct))
 
     # add to dataframe
-    prediction_log = pd.Series(Y_pred.ravel(), name="PredictionLog", index=country_info.index)
-    prediction = pd.Series(Y_pred.ravel(), name="Prediction", index=country_info.index).apply(applied_func)
+    prediction_log = pd.Series(Y_pred.ravel(), name="Prediction" + column_suffix_inv, index=country_info.index)
+    prediction = pd.Series(Y_pred.ravel(), name="Prediction" + column_suffix_apply, index=country_info.index).apply(applied_func)
     return pd.concat([country_info, prediction, prediction_log], axis=1, sort=False), reg_error_pct, daily_growth_pct
 
 # Plot
-def plot_country_log(country_info_log, country, reg_error_pct, daily_growth_pct):
-    ax = country_info_log.reset_index().plot(x='index', y=['cases', 'deaths', 'Prediction'])
+def plot_country_log(country_info_log, country, reg_error_pct, daily_growth_pct, column_suffix_apply):
+    ax = country_info_log.reset_index().plot(x='index', y=['cases', 'deaths', 'Prediction' + column_suffix_apply])
     # ax = country_info_log.reset_index().plot(x='index', y=['casesLog', 'deathsLog', 'PredictionLog'])
     # ax = country_info_log.reset_index().plot(x='index', y=['cases', 'deaths'])
     ax.set_yscale('log')
@@ -214,15 +214,20 @@ def process_plot_country(country):
         applied_func = pow_10
         inverse_func = log10_filter
 
-    country_info = add_country_info_log(country_info, inverse_func)
+    column_suffix_inv = "InvLogistics" if args.logistic else "Log"
+    column_suffix_apply = "Logistics" if args.logistic else "Exp"
+
+
+    country_info = add_country_info_log(country_info, inverse_func, column_suffix_inv)
     country_info, reg_error_pct, daily_growth_pct = \
         add_linear_regression_log_and_prediction(
-            country_info, applied_func, inverse_func
+            country_info, applied_func, inverse_func, column_suffix_inv, column_suffix_apply
         )
     print("Regression error: {} pct".format(reg_error_pct))
 
-    image_name = plot_country_log(country_info, country, reg_error_pct, daily_growth_pct)
-    cases_prediction = int(country_info["Prediction"][-1])
+    image_name = plot_country_log(country_info, country, reg_error_pct,
+                                  daily_growth_pct, column_suffix_apply)
+    cases_prediction = int(country_info["Prediction" + column_suffix_apply][-1])
     return {
         "country": country,
         "image_name": image_name,
@@ -253,7 +258,7 @@ for index, country in enumerate(countries):
         print("Processing {} ({}/{})".format(country, index + 1, len(countries)))
         image_info = process_plot_country(country)
         images_info.append(image_info)
-    except KeyError as e:
+    except ValueError as e:
         # todo: back to...
             # except ValueError as e:
         # should happen in linear regression if no value
