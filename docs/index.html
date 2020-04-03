@@ -68,6 +68,7 @@
                   <li class="list-group-item">Daily death count at last update: {{ country_info.deaths_last_update }}</li>
                   <li class="list-group-item">Error in prediction: {{ country_info.reg_error_pct | round: 2}}%</li>
                   <li class="list-group-item">Daily growth: {{ country_info.daily_growth_pct | round: 2}}%</li>
+                  <li class="list-group-item">Prediction of daily cases in {{ site.data.global_info.days_predict }} days: {{ country_info.cases_prediction }}</li>
                 </ul>
               </div>
             </div>

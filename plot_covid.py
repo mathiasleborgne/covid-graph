@@ -190,6 +190,7 @@ def process_plot_country(country):
     country_info, reg_error_pct, daily_growth_pct = \
         add_linear_regression_log_and_prediction(country_info)
     image_name = plot_country_log(country_info, country, reg_error_pct, daily_growth_pct)
+    cases_prediction = int(country_info["Prediction"][-1])
     return {
         "country": country,
         "image_name": image_name,
@@ -197,6 +198,7 @@ def process_plot_country(country):
         "daily_growth_pct": daily_growth_pct,
         "cases_last_update": cases_last_update,
         "deaths_last_update": deaths_last_update,
+        "cases_prediction": cases_prediction,
     }
 
 def save_json(file_name, content):
@@ -223,6 +225,7 @@ for index, country in enumerate(countries):
         # should happen in linear regression if no value
         print("No case found for {}".format(country))
         continue
+    print()
 
 global_info = {
     "days_predict": args.days_predict,
