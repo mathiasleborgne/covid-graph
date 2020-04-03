@@ -35,7 +35,6 @@ parser.add_argument("--country", help="Select a specific country", default='Fran
 parser.add_argument("--favorite", help="Favorite countries", action="store_true")
 parser.add_argument("--all", help="All countries", action="store_true")
 parser.add_argument("--show", help="Show images", action="store_true")
-parser.add_argument("--logistic", help="Use logistic regression", action="store_true")
 parser.add_argument("--days_predict", help="Number of days to predict in the future", default=7, type=int)
 args = parser.parse_args()
 
