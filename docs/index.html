@@ -64,6 +64,8 @@
                 <h5 class="card-title">{{ country_info.country }}</h5>
                 <!-- <p class="card-text">dummy</p> -->
                 <ul class="list-group list-group-flush">
+                  <li class="list-group-item">Daily cases at last update: {{ country_info.cases_last_update }}</li>
+                  <li class="list-group-item">Daily death count at last update: {{ country_info.deaths_last_update }}</li>
                   <li class="list-group-item">Error in prediction: {{ country_info.reg_error_pct | round: 2}}%</li>
                   <li class="list-group-item">Daily growth: {{ country_info.daily_growth_pct | round: 2}}%</li>
                 </ul>

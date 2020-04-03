@@ -183,6 +183,9 @@ def plot_country_log(country_info_log, country, reg_error_pct, daily_growth_pct)
 
 def process_plot_country(country):
     country_info = get_country_info(country)
+    cases_last_update = int(country_info["cases"][0])
+    deaths_last_update = int(country_info["deaths"][0])
+    print(cases_last_update)
     country_info = add_country_info_log(country_info)
     country_info, reg_error_pct, daily_growth_pct = \
         add_linear_regression_log_and_prediction(country_info)
@@ -192,6 +195,8 @@ def process_plot_country(country):
         "image_name": image_name,
         "reg_error_pct": reg_error_pct,
         "daily_growth_pct": daily_growth_pct,
+        "cases_last_update": cases_last_update,
+        "deaths_last_update": deaths_last_update,
     }
 
 def save_json(file_name, content):
