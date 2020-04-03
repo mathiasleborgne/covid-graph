@@ -19,6 +19,7 @@ import argparse
     Todo:
         - use a logarithmic yscale
         - make a prediction for deaths
+        - remove all images when performing a reload? (might be harder with artifacts)
         - check usage of dates, use index
         - "with current trend, number of cases is multiplied by X every day"
         - use https://covid19api.com/#details
@@ -35,6 +36,8 @@ parser.add_argument("--show", help="Show images", action="store_true")
 parser.add_argument("--days_predict", help="Number of days to predict in the future", default=7, type=int)
 args = parser.parse_args()
 
+# constants
+min_cases = 100
 favorite_countries = [
     "France",
     "Spain",
@@ -101,15 +104,22 @@ except FileNotFoundError as e:
 world_info['date'] = world_info['dateRep']
 world_info = world_info.set_index(['date'])
 world_info.sort_values(by='date')
-countries_population_dict = dict(zip(world_info.countriesAndTerritories, world_info.popData2018))
-all_countries = [country
-                 for country, population in countries_population_dict.items()
-                 if population > 1000000.]
-print("Countries:", all_countries)
+all_countries_world = set(world_info.countriesAndTerritories)
 
 def get_country_info(country):
     country_info = world_info[world_info['countriesAndTerritories'].isin([country])]
     return country_info.loc[:args.start_date]
+
+countries_max_cases_dict = {
+    country: get_country_info(country)["cases"].max()
+    for country in all_countries_world
+}
+# countries_population_dict = dict(zip(world_info.countriesAndTerritories, world_info.popData2018))
+all_countries = [country
+                 for country, max_cases in countries_max_cases_dict.items()
+                 if max_cases > min_cases]
+print("Countries:", all_countries)
+
 
 # log10
 def log10_filter(x):
@@ -201,7 +211,7 @@ images_info = []
 countries = get_countries(world_info)
 for index, country in enumerate(countries):
     try:
-        print("Processing {} ({}/{})".format(country, index, len(countries)))
+        print("Processing {} ({}/{})".format(country, index + 1, len(countries)))
         image_info = process_plot_country(country)
         images_info.append(image_info)
     except ValueError as e:
@@ -212,6 +222,7 @@ for index, country in enumerate(countries):
 global_info = {
     "days_predict": args.days_predict,
     "favorite_countries": favorite_countries,
+    "min_cases": min_cases,
     "date_last_update": datetime.date.today().strftime("%B %d, %Y"),
 }
 
