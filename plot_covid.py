@@ -13,15 +13,18 @@ import argparse
 """ This script:
         - gets an Excel file with all countries information
         - makes a pandas, filtered by date
-        - computes a linear regression on the log10 figures, and predicts a few days ahead
+        - computes a linear regression on the figures with
+            - exponential model
+            - logistics model
+        - chooses best model and predicts a few days ahead
         - plots the figures and prediction
 
     Todo:
+        - fix daily growth for logistics
         - make a prediction for deaths
         - remove all images when performing a reload? (might be harder with artifacts)
         - check usage of dates, use index
         - use https://covid19api.com/#details
-        - check logistic curve
 """
 
 
@@ -200,13 +203,8 @@ def plot_country_log(country_info_log, country, reg_error_pct, daily_growth_pct,
     plt.savefig(os.path.join("docs", "assets", "img", image_name))
     return image_name
 
-def process_plot_country(country):
-    country_info = get_country_info(country)
-    cases_last_update = int(country_info["cases"][0])
-    deaths_last_update = int(country_info["deaths"][0])
-    print(cases_last_update)
-
-    if args.logistic:
+def regress_predict(is_logistic, country_info):
+    if is_logistic:
         l_max = country_info["cases"].max()
         applied_func = lambda z: logistics(z, l_max)
         inverse_func = lambda y: inverse_logistics(y, l_max)
@@ -214,8 +212,8 @@ def process_plot_country(country):
         applied_func = pow_10
         inverse_func = log10_filter
 
-    column_suffix_inv = "InvLogistics" if args.logistic else "Log"
-    column_suffix_apply = "Logistics" if args.logistic else "Exp"
+    column_suffix_inv = "InvLogistics" if is_logistic else "Log"
+    column_suffix_apply = "Logistics" if is_logistic else "Exponential"
 
 
     country_info = add_country_info_log(country_info, inverse_func, column_suffix_inv)
@@ -223,6 +221,30 @@ def process_plot_country(country):
         add_linear_regression_log_and_prediction(
             country_info, applied_func, inverse_func, column_suffix_inv, column_suffix_apply
         )
+    return country_info, reg_error_pct, daily_growth_pct
+
+def process_plot_country(country):
+    country_info = get_country_info(country)
+    cases_last_update = int(country_info["cases"][0])
+    deaths_last_update = int(country_info["deaths"][0])
+    print(cases_last_update)
+
+    country_info_logistic, reg_error_pct_logistic, daily_growth_pct_logistic = \
+        regress_predict(True, country_info)
+    country_info_exp, reg_error_pct_exp, daily_growth_pct_exp = \
+        regress_predict(False, country_info)
+    if reg_error_pct_exp > reg_error_pct_logistic:
+        country_info, reg_error_pct, daily_growth_pct = \
+            country_info_logistic, reg_error_pct_logistic, daily_growth_pct_logistic
+        column_suffix_apply = "Logistics"
+    else:
+        country_info, reg_error_pct, daily_growth_pct = \
+            country_info_exp, reg_error_pct_exp, daily_growth_pct_exp
+        column_suffix_apply = "Exponential"
+    print("Chose {} regression (errors: exp={:.1f}/logistics={:.1f}"
+          .format(column_suffix_apply, reg_error_pct_exp, reg_error_pct_logistic))
+
+
     print("Regression error: {} pct".format(reg_error_pct))
 
     image_name = plot_country_log(country_info, country, reg_error_pct,
@@ -236,6 +258,7 @@ def process_plot_country(country):
         "cases_last_update": cases_last_update,
         "deaths_last_update": deaths_last_update,
         "cases_prediction": cases_prediction,
+        "prediction_type": column_suffix_apply,
     }
 
 def save_json(file_name, content):
@@ -258,7 +281,7 @@ for index, country in enumerate(countries):
         print("Processing {} ({}/{})".format(country, index + 1, len(countries)))
         image_info = process_plot_country(country)
         images_info.append(image_info)
-    except ValueError as e:
+    except KeyError as e:
         # todo: back to...
             # except ValueError as e:
         # should happen in linear regression if no value

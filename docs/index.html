@@ -36,8 +36,8 @@
               (see explanation <a href="https://youtu.be/Kas0tIxDvrg">here</a>),
               they are displayed in a logarithmic manner,
               which means that each additional unit on the y-axis makes the number 10 times bigger.
-              Curves are compared to an exponential curve, with an error rate...
-              which will hopefully increase in the near future as the curves flatten.
+              Curves are compared to an exponential curve (when it doesn't look flat yet) or a logistic curve (when it's already starting to flatten). The model with smallest error is chosen.
+              Prediction is thus made, with an error rate (hoping that the numbers are overrated...).
               Only countries with more than {{ site.data.global_info.min_cases }} cases are shown.
             </p>
             <footer class="blockquote-footer">
@@ -67,7 +67,8 @@
                   <li class="list-group-item">Daily cases at last update: {{ country_info.cases_last_update }}</li>
                   <li class="list-group-item">Daily death count at last update: {{ country_info.deaths_last_update }}</li>
                   <li class="list-group-item">Error in prediction: {{ country_info.reg_error_pct | round: 2}}%</li>
-                  <li class="list-group-item">Daily growth: {{ country_info.daily_growth_pct | round: 2}}%</li>
+                  <li class="list-group-item">Prediction type: {{ country_info.prediction_type }}</li>
+                  <!-- <li class="list-group-item">Daily growth: {{ country_info.daily_growth_pct | round: 2}}%</li> -->
                   <li class="list-group-item">Prediction of daily cases in {{ site.data.global_info.days_predict }} days: {{ country_info.cases_prediction }}</li>
                 </ul>
               </div>
