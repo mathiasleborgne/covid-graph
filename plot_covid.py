@@ -20,10 +20,15 @@ import argparse
         - plots the figures and prediction
 
     Todo:
-        - fix daily growth for logistics
         - make a prediction for deaths
+        - ask how to use artifacts in Jekyll on GH pages
+        - anchor links
         - remove all images when performing a reload? (might be harder with artifacts)
         - check usage of dates, use index
+        - for logistics
+            - fix daily growth
+            - compute max on flattened curve
+            - use past data
         - use https://covid19api.com/#details
 """
 
