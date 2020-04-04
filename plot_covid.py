@@ -23,12 +23,11 @@ import argparse
         - make a prediction for deaths
         - ask how to use artifacts in Jekyll on GH pages
         - anchor links
-        - remove all images when performing a reload? (might be harder with artifacts)
-        - check usage of dates, use index
         - for logistics
             - fix daily growth
             - compute max on flattened curve
             - use past data
+        - check usage of dates, use index
         - use https://covid19api.com/#details
 """
 
@@ -147,9 +146,17 @@ def inverse_logistics(y, l_max):
         return 1.
     return np.log((l_max / y) - 1.)
 
-def add_country_info_log(country_info, applied_func, column_suffix_inv):
-    country_info["cases" + column_suffix_inv] = country_info["cases"].apply(applied_func)
-    country_info["deaths" + column_suffix_inv] = country_info["deaths"].apply(applied_func)
+def get_column_name_func(column_name, prediction_type, is_inverted):
+    column_name_func = column_name + prediction_type
+    if is_inverted:
+        column_name_func = "Inv" + column_name_func
+    return column_name_func
+
+def add_country_info_log(country_info, applied_func, prediction_type):
+    country_info[get_column_name_func("cases", prediction_type, True)] = \
+        country_info["cases"].apply(applied_func)
+    country_info[get_column_name_func("deaths", prediction_type, True)] = \
+        country_info["deaths"].apply(applied_func)
     return country_info
 
 def pow_10(x):
@@ -157,11 +164,11 @@ def pow_10(x):
 
 
 
-def add_linear_regression_log_and_prediction(country_info, applied_func, inverse_func, column_suffix_inv, column_suffix_apply):
+def add_linear_regression_log_and_prediction(country_info, applied_func, inverse_func, prediction_type):
     # fit linear regression
     dates_original = country_info["dateRep"] # todo: use index directly
     X = dates_original.to_numpy(dtype=np.float32).reshape(-1, 1)
-    Y = country_info["cases" + column_suffix_inv].to_numpy().reshape(-1, 1)
+    Y = country_info[get_column_name_func("cases", prediction_type, True)].to_numpy().reshape(-1, 1)
     linear_regressor = LinearRegression()  # create object for the class
     linear_regressor.fit(X, Y)  # perform linear regression
         # can raise ValueError if no case
@@ -186,83 +193,92 @@ def add_linear_regression_log_and_prediction(country_info, applied_func, inverse
     print("Cases grow of {} pct each day".format(daily_growth_pct))
 
     # add to dataframe
-    prediction_log = pd.Series(Y_pred.ravel(), name="Prediction" + column_suffix_inv, index=country_info.index)
-    prediction = pd.Series(Y_pred.ravel(), name="Prediction" + column_suffix_apply, index=country_info.index).apply(applied_func)
-    return pd.concat([country_info, prediction, prediction_log], axis=1, sort=False), reg_error_pct, daily_growth_pct
+    prediction_log = pd.Series(Y_pred.ravel(),
+                               name=get_column_name_func("Prediction", prediction_type, True),
+                               index=country_info.index)
+    prediction = pd.Series(Y_pred.ravel(),
+                           name=get_column_name_func("Prediction", prediction_type, False),
+                           index=country_info.index).apply(applied_func)
+    updated_country_info = pd.concat([country_info, prediction, prediction_log],
+                                     axis=1, sort=False)
+    return updated_country_info, reg_error_pct, daily_growth_pct
 
 # Plot
-def plot_country_log(country_info_log, country, reg_error_pct, daily_growth_pct, column_suffix_apply):
-    ax = country_info_log.reset_index().plot(x='index', y=['cases', 'deaths', 'Prediction' + column_suffix_apply])
-    # ax = country_info_log.reset_index().plot(x='index', y=['casesLog', 'deathsLog', 'PredictionLog'])
-    # ax = country_info_log.reset_index().plot(x='index', y=['cases', 'deaths'])
+def plot_country_log(country, model_results):
+    country_info = model_results["country_info"]
+    prediction_column_name = \
+        get_column_name_func('Prediction', model_results["prediction_type"], False)
+    ax = country_info.reset_index()\
+        .plot(x='index', y=['cases', 'deaths', prediction_column_name])
+    # ax = country_info.reset_index().plot(x='index', y=['casesLog', 'deathsLog', 'PredictionLog'])
+    # ax = country_info.reset_index().plot(x='index', y=['cases', 'deaths'])
     ax.set_yscale('log')
     plt.xlabel("date")
+
     # plt.ylabel("log_10")
     if args.show:
         plt.title("{} - Cases/Deaths\n(Reg. error: {:.1f} pct / Daily growth: {:.1f} pct)"
-                  .format(country, reg_error_pct, daily_growth_pct))
+                  .format(country, model_results["reg_error_pct"],
+                          model_results["daily_growth_pct"]))
     folder_images = "saved_images"
     image_name = 'img_log10_{}.png'.format(country)
     plt.savefig(os.path.join(folder_images, image_name))
     plt.savefig(os.path.join("docs", "assets", "img", image_name))
     return image_name
 
-def regress_predict(is_logistic, country_info):
-    if is_logistic:
+def get_applied_inverse_func(prediction_type, country_info):
+    if prediction_type == "Logistics":
         l_max = country_info["cases"].max()
         applied_func = lambda z: logistics(z, l_max)
         inverse_func = lambda y: inverse_logistics(y, l_max)
     else:
         applied_func = pow_10
         inverse_func = log10_filter
+    return applied_func, inverse_func
 
-    column_suffix_inv = "InvLogistics" if is_logistic else "Log"
-    column_suffix_apply = "Logistics" if is_logistic else "Exponential"
-
-
-    country_info = add_country_info_log(country_info, inverse_func, column_suffix_inv)
+def regress_predict(prediction_type, country_info):
+    applied_func, inverse_func = get_applied_inverse_func(prediction_type, country_info)
+    country_info = add_country_info_log(country_info, inverse_func, prediction_type)
     country_info, reg_error_pct, daily_growth_pct = \
         add_linear_regression_log_and_prediction(
-            country_info, applied_func, inverse_func, column_suffix_inv, column_suffix_apply
-        )
+            country_info, applied_func, inverse_func, prediction_type)
     return country_info, reg_error_pct, daily_growth_pct
 
 def process_plot_country(country):
     country_info = get_country_info(country)
     cases_last_update = int(country_info["cases"][0])
     deaths_last_update = int(country_info["deaths"][0])
-    print(cases_last_update)
+    # todo: clean code -> use max
+    regress_predict_country = lambda prediction_type: regress_predict(prediction_type, country_info)
+    model_types = ["Logistics", "Exponential"]
+    # todo: add predictions to country_info as pointer
+    models_results = [{
+            "prediction_type": prediction_type,
+            "country_info": country_info,
+            "reg_error_pct": reg_error_pct,
+            "daily_growth_pct": daily_growth_pct,
+        }
+        for prediction_type, (country_info, reg_error_pct, daily_growth_pct)
+        in zip(model_types, map(regress_predict_country, model_types))
+    ]
 
-    country_info_logistic, reg_error_pct_logistic, daily_growth_pct_logistic = \
-        regress_predict(True, country_info)
-    country_info_exp, reg_error_pct_exp, daily_growth_pct_exp = \
-        regress_predict(False, country_info)
-    if reg_error_pct_exp > reg_error_pct_logistic:
-        country_info, reg_error_pct, daily_growth_pct = \
-            country_info_logistic, reg_error_pct_logistic, daily_growth_pct_logistic
-        column_suffix_apply = "Logistics"
-    else:
-        country_info, reg_error_pct, daily_growth_pct = \
-            country_info_exp, reg_error_pct_exp, daily_growth_pct_exp
-        column_suffix_apply = "Exponential"
-    print("Chose {} regression (errors: exp={:.1f}/logistics={:.1f}"
-          .format(column_suffix_apply, reg_error_pct_exp, reg_error_pct_logistic))
+    model_results_best = \
+        sorted(models_results, key = lambda result: result['reg_error_pct'])[0]
+    print("Chose {} regression (error={:.1f})"
+          .format(model_results_best["prediction_type"],
+                  model_results_best["reg_error_pct"]))
 
-
-    print("Regression error: {} pct".format(reg_error_pct))
-
-    image_name = plot_country_log(country_info, country, reg_error_pct,
-                                  daily_growth_pct, column_suffix_apply)
-    cases_prediction = int(country_info["Prediction" + column_suffix_apply][-1])
+    image_name = plot_country_log(country, model_results_best)
+    column_name_prediction = \
+        get_column_name_func("Prediction", model_results_best["prediction_type"], False)
+    cases_prediction = int(model_results_best["country_info"][column_name_prediction][-1])
     return {
+        **{key: value for key, value in model_results_best.items() if key != "country_info"},
         "country": country,
         "image_name": image_name,
-        "reg_error_pct": reg_error_pct,
-        "daily_growth_pct": daily_growth_pct,
         "cases_last_update": cases_last_update,
         "deaths_last_update": deaths_last_update,
         "cases_prediction": cases_prediction,
-        "prediction_type": column_suffix_apply,
     }
 
 def save_json(file_name, content):
@@ -285,7 +301,7 @@ for index, country in enumerate(countries):
         print("Processing {} ({}/{})".format(country, index + 1, len(countries)))
         image_info = process_plot_country(country)
         images_info.append(image_info)
-    except KeyError as e:
+    except ValueError as e:
         # todo: back to...
             # except ValueError as e:
         # should happen in linear regression if no value
