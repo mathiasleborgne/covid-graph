@@ -149,7 +149,7 @@ def inverse_logistics(y, l_max):
 def get_column_name_func(column_name, prediction_type, is_inverted):
     column_name_func = column_name + prediction_type
     if is_inverted:
-        column_name_func = "Inv" + column_name_func
+        column_name_func = column_name_func + "Inv"
     return column_name_func
 
 def add_country_info_log(country_info, applied_func, prediction_type):
