@@ -152,7 +152,7 @@ def get_column_name_func(column_name, prediction_type, is_inverted):
         column_name_func = column_name_func + "Inv"
     return column_name_func
 
-def add_country_info_log(country_info, applied_func, prediction_type):
+def add_country_info_mapped_for_prediction(country_info, applied_func, prediction_type):
     country_info[get_column_name_func("cases", prediction_type, True)] = \
         country_info["cases"].apply(applied_func)
     country_info[get_column_name_func("deaths", prediction_type, True)] = \
@@ -187,6 +187,7 @@ def add_linear_regression_log_and_prediction(country_info, applied_func, inverse
     # compute daily multiplicative factor
         # todo: calculate once
 
+    # eg for Exponential:
     # ln(Y) = a*t+b --> Y(t) = B*exp(a*t) --> Y(t+1) = B*exp(a)*exp(a*t) = exp(a)*Y(t)
     coeff_daily = applied_func(Y_pred[1][0] - Y_pred[0][0])
     daily_growth_pct = (coeff_daily - 1.) * 100
@@ -238,7 +239,7 @@ def get_applied_inverse_func(prediction_type, country_info):
 
 def regress_predict(prediction_type, country_info):
     applied_func, inverse_func = get_applied_inverse_func(prediction_type, country_info)
-    country_info = add_country_info_log(country_info, inverse_func, prediction_type)
+    country_info = add_country_info_mapped_for_prediction(country_info, inverse_func, prediction_type)
     country_info, reg_error_pct, daily_growth_pct = \
         add_linear_regression_log_and_prediction(
             country_info, applied_func, inverse_func, prediction_type)
@@ -249,7 +250,8 @@ def process_plot_country(country):
     cases_last_update = int(country_info["cases"][0])
     deaths_last_update = int(country_info["deaths"][0])
     # todo: clean code -> use max
-    regress_predict_country = lambda prediction_type: regress_predict(prediction_type, country_info)
+    regress_predict_country = \
+        lambda prediction_type: regress_predict(prediction_type, country_info)
     model_types = ["Logistics", "Exponential"]
     # todo: add predictions to country_info as pointer
     models_results = [{
