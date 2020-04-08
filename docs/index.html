@@ -61,16 +61,45 @@
             <div class="card" style="width: 26rem;">
               <img src="./assets/img/{{ country_info.image_name }}" class="card-img-top" alt="{{ country_info.country }}">
               <div class="card-body">
-                <h5 class="card-title">{{ country_info.country }}</h5>
-                <!-- <p class="card-text">dummy</p> -->
-                <ul class="list-group list-group-flush">
-                  <li class="list-group-item">Daily cases at last update: {{ country_info.cases.last_update }}</li>
-                  <li class="list-group-item">Daily death count at last update: {{ country_info.deaths.last_update }}</li>
-                  <li class="list-group-item">Error in prediction: {{ country_info.cases.reg_error_pct | round: 2}}%</li>
-                  <li class="list-group-item">Prediction type: {{ country_info.cases.prediction_type }}</li>
-                  <!-- <li class="list-group-item">Daily growth: {{ country_info.daily_growth_pct | round: 2}}%</li> -->
-                  <li class="list-group-item">Prediction of daily cases in {{ site.data.global_info.days_predict }} days: {{ country_info.cases.prediction }}</li>
-                </ul>
+                <!-- <h5 class="card-title">{{ country_info.country }}</h5> -->
+
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">{{ country_info.country }}</th>
+                      <th scope="col">Cases</th>
+                      <th scope="col">Deaths</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">Last update</th>
+                      {% for data_info in country_info %}
+                        <td>{{ data_info[1].last_update }}</td>
+                      {% endfor %}
+                    </tr>
+                    <tr>
+                      <th scope="row">Prediction in {{ site.data.global_info.days_predict }} days</th>
+                      {% for data_info in country_info %}
+                        <td>{{ data_info[1].prediction }}</td>
+                      {% endfor %}
+                    </tr>
+                    <tr>
+                      <th scope="row">Prediction type</th>
+                      {% for data_info in country_info %}
+                        <td>{{ data_info[1].prediction_type }}</td>
+                      {% endfor %}
+                    </tr>
+                    <tr>
+                      <th scope="row">Error in prediction (%)</th>
+                      {% for data_info in country_info %}
+                        <td>{{ data_info[1].reg_error_pct_int }}</td>
+                      {% endfor %}
+                    </tr>
+                  </tbody>
+                </table>
+                <!-- {{ country_info }}%</td> -->
+
               </div>
             </div>
           </div>

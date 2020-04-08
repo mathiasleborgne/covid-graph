@@ -206,7 +206,13 @@ def add_linear_regression_log_and_prediction(country_info, data_name, applied_fu
                            index=country_info.index).apply(applied_func)
     country_info = pd.concat([country_info, prediction, prediction_log],
                               axis=1, sort=False)
-    return country_info, reg_error_pct, daily_growth_pct
+    results = {
+        "prediction_type": prediction_type,
+        "reg_error_pct": reg_error_pct,
+        "reg_error_pct_int": int(reg_error_pct),
+        "daily_growth_pct": daily_growth_pct,
+    }
+    return country_info, results
 
 # Plot
 def plot_country_log(country, all_results, country_info):
@@ -245,24 +251,20 @@ def get_applied_inverse_func(prediction_type, country_info, data_name):
 def regress_predict(prediction_type, country_info, data_name):
     applied_func, inverse_func = get_applied_inverse_func(prediction_type, country_info, data_name)
     country_info = add_country_info_mapped_for_prediction(country_info, data_name, inverse_func, prediction_type)
-    updated_country_info, reg_error_pct, daily_growth_pct = \
+    updated_country_info, results = \
         add_linear_regression_log_and_prediction(
             country_info, data_name, applied_func, inverse_func, prediction_type)
-    return updated_country_info, reg_error_pct, daily_growth_pct
+    return updated_country_info, results
 
 def regress_predict_data(data_name, country_info):
     prediction_types = ["Logistics", "Exponential"]
     # todo: add predictions to country_info as pointer
     models_results = []
     for prediction_type in prediction_types:
-        updated_country_info, reg_error_pct, daily_growth_pct = \
+        updated_country_info, results = \
             regress_predict(prediction_type, country_info, data_name)
         country_info = updated_country_info
-        models_results.append({
-            "prediction_type": prediction_type,
-            "reg_error_pct": reg_error_pct,
-            "daily_growth_pct": daily_growth_pct,
-        })
+        models_results.append(results)
 
     model_results_best = \
         sorted(models_results, key = lambda result: result['reg_error_pct'])[0]
@@ -316,9 +318,7 @@ for index, country in enumerate(countries):
         print("Processing {} ({}/{})".format(country, index + 1, len(countries)))
         image_info = process_plot_country(country)
         images_info.append(image_info)
-    except IOError as e:
-        # except ValueError as e:
-        # should happen in linear regression if no value
+    except ValueError as e:
         print("No case found for {}".format(country))
         continue
     print()
