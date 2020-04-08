@@ -8,3 +8,12 @@ to publish them to [this github page](https://mathiasleborgne.github.io/covid-gr
 
 
 
+## Install and build
+
+    # make website data
+    pip install requirements.txt
+    python plot_covid.py --all --reload
+    # build website
+    cd docs/
+    bundle exec jekyll serve
+    # open in browser http://127.0.0.1:4000/
