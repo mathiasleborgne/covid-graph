@@ -64,12 +64,12 @@
                 <h5 class="card-title">{{ country_info.country }}</h5>
                 <!-- <p class="card-text">dummy</p> -->
                 <ul class="list-group list-group-flush">
-                  <li class="list-group-item">Daily cases at last update: {{ country_info.cases_last_update }}</li>
-                  <li class="list-group-item">Daily death count at last update: {{ country_info.deaths_last_update }}</li>
-                  <li class="list-group-item">Error in prediction: {{ country_info.reg_error_pct | round: 2}}%</li>
-                  <li class="list-group-item">Prediction type: {{ country_info.prediction_type }}</li>
+                  <li class="list-group-item">Daily cases at last update: {{ country_info.cases.last_update }}</li>
+                  <li class="list-group-item">Daily death count at last update: {{ country_info.deaths.last_update }}</li>
+                  <li class="list-group-item">Error in prediction: {{ country_info.cases.reg_error_pct | round: 2}}%</li>
+                  <li class="list-group-item">Prediction type: {{ country_info.cases.prediction_type }}</li>
                   <!-- <li class="list-group-item">Daily growth: {{ country_info.daily_growth_pct | round: 2}}%</li> -->
-                  <li class="list-group-item">Prediction of daily cases in {{ site.data.global_info.days_predict }} days: {{ country_info.cases_prediction }}</li>
+                  <li class="list-group-item">Prediction of daily cases in {{ site.data.global_info.days_predict }} days: {{ country_info.cases.prediction }}</li>
                 </ul>
               </div>
             </div>
