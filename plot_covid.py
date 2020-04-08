@@ -25,8 +25,9 @@ import argparse
         - anchor links
         - for logistics
             - fix daily growth
-            - compute max on flattened curve
+            - compute max on smoothed curve
             - use past data
+            - fix NaNs
         - check usage of dates, use index
         - use https://covid19api.com/#details
 """
@@ -141,9 +142,7 @@ def logistics(z, l_max):
 def inverse_logistics(y, l_max):
     # inverse logistics is a*x+b = ln(l_max/y-1)
     if y == 0. or y == l_max:
-        # todo:
-        # return np.nan
-        return 1.
+        return np.nan
     return np.log((l_max / y) - 1.)
 
 def get_column_name_func(column_name, prediction_type, is_inverted):
@@ -163,24 +162,27 @@ def pow_10(x):
     return math.pow(10, x)
 
 
+def get_future_index(country_info, number_days_future):
+    dates_extended = pd.date_range(country_info.index[0], periods=number_days_future)
+    ix_dates_extended = pd.DatetimeIndex(country_info.index).union(pd.DatetimeIndex(dates_extended))
+    country_info = country_info.reindex(ix_dates_extended)
+    return country_info
 
 def add_linear_regression_log_and_prediction(country_info, applied_func, inverse_func, prediction_type):
     # fit linear regression
-    dates_original = country_info["dateRep"] # todo: use index directly
-    X = dates_original.to_numpy(dtype=np.float32).reshape(-1, 1)
-    Y = country_info[get_column_name_func("cases", prediction_type, True)].to_numpy().reshape(-1, 1)
+    column_applied_func = get_column_name_func("cases", prediction_type, True)
+    country_info_filtered = country_info.dropna(how='any')
+    X = country_info_filtered.index.to_numpy(dtype=np.float32).reshape(-1, 1)
+    Y = country_info_filtered[column_applied_func]\
+        .to_numpy().reshape(-1, 1)
     linear_regressor = LinearRegression()  # create object for the class
     linear_regressor.fit(X, Y)  # perform linear regression
         # can raise ValueError if no case
-
     # regression error
     reg_error_pct = (1 - linear_regressor.score(X, Y)) * 100
 
     # predict
-    number_days_future = args.days_predict
-    dates_extended = pd.date_range(dates_original[0], periods=number_days_future)
-    ix_dates_extended = pd.DatetimeIndex(dates_original).union(pd.DatetimeIndex(dates_extended))
-    country_info = country_info.reindex(ix_dates_extended)
+    country_info = get_future_index(country_info, args.days_predict)
     X_extended = country_info.index.to_numpy(dtype=np.float32).reshape(-1, 1)
     Y_pred = linear_regressor.predict(X_extended)
 
@@ -303,9 +305,8 @@ for index, country in enumerate(countries):
         print("Processing {} ({}/{})".format(country, index + 1, len(countries)))
         image_info = process_plot_country(country)
         images_info.append(image_info)
-    except ValueError as e:
-        # todo: back to...
-            # except ValueError as e:
+    except KeyError as e:
+        # except ValueError as e:
         # should happen in linear regression if no value
         print("No case found for {}".format(country))
         continue
