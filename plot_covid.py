@@ -215,7 +215,7 @@ def add_linear_regression_log_and_prediction(country_info, data_name, applied_fu
     return country_info, results
 
 # Plot
-def plot_country_log(country, all_results, country_info):
+def plot_country_log(country, all_results, country_info, log_scale):
     prediction_columns_names = [
         get_column_name_func(data_name, all_results[data_name]["prediction_type"], False, True)
         for data_name in data_names
@@ -224,7 +224,8 @@ def plot_country_log(country, all_results, country_info):
         .plot(x='index', y=['cases', 'deaths'] + prediction_columns_names)
     # ax = country_info.reset_index().plot(x='index', y=['casesLog', 'deathsLog', 'PredictionLog'])
     # ax = country_info.reset_index().plot(x='index', y=['cases', 'deaths'])
-    ax.set_yscale('log')
+    if log_scale:
+        ax.set_yscale('log')
     plt.xlabel("date")
 
     # plt.ylabel("log_10")
@@ -233,7 +234,7 @@ def plot_country_log(country, all_results, country_info):
                   .format(country, all_results["cases"]["reg_error_pct"],
                           all_results["cases"]["daily_growth_pct"]))
     folder_images = "saved_images"
-    image_name = 'img_log10_{}.png'.format(country)
+    image_name = 'img_log10_{}_{}.png'.format(country, "log" if log_scale else "normal")
     plt.savefig(os.path.join(folder_images, image_name))
     plt.savefig(os.path.join("docs", "assets", "img", image_name))
     return image_name
@@ -291,10 +292,12 @@ def process_plot_country(country):
         all_results[data_name] = country_results_data
         country_info = updated_country_info
 
-    image_name = plot_country_log(country, all_results, country_info)
+    image_name_log = plot_country_log(country, all_results, country_info, True)
+    image_name_normal = plot_country_log(country, all_results, country_info, False)
     all_results = { **all_results,
         "country": country,
-        "image_name": image_name,
+        "image_name_log": image_name_log,
+        "image_name_normal": image_name_normal,
     }
     return all_results
 
