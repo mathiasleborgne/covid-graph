@@ -34,7 +34,7 @@
             <p class="mb-2">
               As growth is currently exponential
               (see explanation <a href="https://youtu.be/Kas0tIxDvrg">here</a>),
-              they are displayed in a logarithmic manner,
+              they are displayed by default in a logarithmic manner,
               which means that each additional unit on the y-axis makes the number 10 times bigger.
               Curves are compared to an exponential curve (when it doesn't look flat yet) or a logistic curve (when it's already starting to flatten). The model with smallest error is chosen.
               Prediction is thus made, with an error rate (hoping that the numbers are overrated...).
@@ -59,7 +59,25 @@
           <div class="col-sm">
             <!-- <div class="card" style="width: 18rem;"> -->
             <div class="card" style="width: 26rem;">
-              <img src="./assets/img/{{ country_info.image_name }}" class="card-img-top" alt="{{ country_info.country }}">
+
+              <ul class="nav nav-tabs" id="ScalesTab" role="tablist">
+                <li class="nav-item">
+                  <a class="nav-link active" id="log-tab-{{ country_info.country }}" data-toggle="tab" href="#log-{{ country_info.country }}" role="tab" aria-controls="log-{{ country_info.country }}" aria-selected="true">Log Scale</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" id="normal-tab-{{ country_info.country }}" data-toggle="tab" href="#normal-{{ country_info.country }}" role="tab" aria-controls="normal-{{ country_info.country }}" aria-selected="false">Normal Scale</a>
+                </li>
+              </ul>
+              <div class="tab-content" id="ScalesTabContent">
+                <div class="tab-pane fade show active" id="log-{{ country_info.country }}" role="tabpanel" aria-labelledby="log-tab-{{ country_info.country }}">
+                  <img src="./assets/img/{{ country_info.image_name_log }}" class="card-img-top" alt="{{ country_info.country }}">
+                </div>
+                <div class="tab-pane fade" id="normal-{{ country_info.country }}" role="tabpanel" aria-labelledby="normal-tab-{{ country_info.country }}">
+                  <img src="./assets/img/{{ country_info.image_name_normal }}" class="card-img-top" alt="{{ country_info.country }}">
+                </div>
+              </div>
+
+
               <div class="card-body">
                 <!-- <h5 class="card-title">{{ country_info.country }}</h5> -->
 
