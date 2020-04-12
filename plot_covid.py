@@ -10,9 +10,10 @@ from tqdm import tqdm
 from sklearn.linear_model import LinearRegression
 import argparse
 
+
 """ This script:
         - gets an Excel file with all countries information
-        - makes a pandas, filtered by date
+        - makes a pandas dataframe, filtered by date
         - computes a linear regression on the figures with
             - exponential model
             - logistics model
@@ -20,26 +21,26 @@ import argparse
         - plots the figures and prediction
 
     Todo:
-        - make a prediction for deaths
-        - ask how to use artifacts in Jekyll on GH pages
         - anchor links
         - for logistics
             - fix daily growth
             - compute max on smoothed curve
             - use past data
-            - fix NaNs
-        - check usage of dates, use index
+        - models:
+            post peak model
         - use https://covid19api.com/#details
 """
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--reload", help="reload xlsx", action="store_true")
-parser.add_argument("--start_date", help="Date in format 2020-3-1", default='2020-3-1')
-parser.add_argument("--country", help="Select a specific country", default='France')
+parser.add_argument("--start_date", help="Date in format 2020-3-1", default="2020-3-1")
+parser.add_argument("--country", help="Select a specific country", default="France")
 parser.add_argument("--favorite", help="Favorite countries", action="store_true")
 parser.add_argument("--all", help="All countries", action="store_true")
 parser.add_argument("--show", help="Show images", action="store_true")
+parser.add_argument("--temp_curves", help="Show temporary curves", action="store_true")
+
 parser.add_argument("--days_predict", help="Number of days to predict in the future", default=7, type=int)
 args = parser.parse_args()
 
@@ -109,13 +110,13 @@ except FileNotFoundError as e:
 #    countryterritoryCode
 #    popData2018
 
-world_info['date'] = world_info['dateRep']
-world_info = world_info.set_index(['date'])
-world_info.sort_values(by='date')
+world_info["date"] = world_info["dateRep"]
+world_info = world_info.set_index(["date"])
+world_info.sort_values(by="date")
 all_countries_world = set(world_info.countriesAndTerritories)
 
 def get_country_info(country):
-    country_info = world_info[world_info['countriesAndTerritories'].isin([country])]
+    country_info = world_info[world_info["countriesAndTerritories"].isin([country])]
     return country_info.loc[:args.start_date]
 
 countries_max_cases_dict = {
@@ -135,6 +136,22 @@ def log10_filter(x):
         return 0.
     else:
         return np.log10(x)
+
+def shift(xs, n):
+    if n >= 0:
+        return np.r_[np.full(n, np.nan), xs[:-n]]
+    else:
+        return np.r_[xs[-n:], np.full(-n, np.nan)]
+
+def smooth(y):
+    n_pts_box = 6
+    box = np.ones(n_pts_box)/n_pts_box
+
+    y_smooth = np.convolve(y, box, mode='same')
+    # y_smooth_shifted = shift(y_smooth, -int(n_pts_box/2))
+    # no need to shift
+    return y_smooth
+
 
 def logistics(z, l_max):
     # logistics: y = l_max/(1+exp(a*x+b)) = l_max/(1+exp(z))
@@ -158,6 +175,8 @@ def get_column_name_func(column_name, prediction_type, is_inverted, is_predictio
 def add_country_info_mapped_for_prediction(country_info, data_name, applied_func, prediction_type):
     column_name = get_column_name_func(data_name, prediction_type, True, False)
     country_info[column_name] = country_info[data_name].apply(applied_func)
+    # todo: dirty place
+    country_info[data_name + "Smooth"] = smooth(country_info[data_name])
     return country_info
 
 def pow_10(x):
@@ -173,7 +192,7 @@ def add_future_index(country_info, number_days_future):
 def add_linear_regression_log_and_prediction(country_info, data_name, applied_func, inverse_func, prediction_type):
     # fit linear regression
     column_applied_func = get_column_name_func(data_name, prediction_type, True, False)
-    country_info_filtered = country_info.dropna(how='any')
+    country_info_filtered = country_info.dropna(how="any")
     X = country_info_filtered.index.to_numpy(dtype=np.float32).reshape(-1, 1)
     Y = country_info_filtered[column_applied_func]\
         .to_numpy().reshape(-1, 1)
@@ -220,12 +239,14 @@ def plot_country_log(country, all_results, country_info, log_scale):
         get_column_name_func(data_name, all_results[data_name]["prediction_type"], False, True)
         for data_name in data_names
     ]
+    if args.temp_curves:
+        prediction_columns_names += ["casesSmooth", "deathsSmooth"]
     ax = country_info.reset_index()\
-        .plot(x='index', y=['cases', 'deaths'] + prediction_columns_names)
-    # ax = country_info.reset_index().plot(x='index', y=['casesLog', 'deathsLog', 'PredictionLog'])
-    # ax = country_info.reset_index().plot(x='index', y=['cases', 'deaths'])
+        .plot(x="index", y=["cases", "deaths"] + prediction_columns_names)
+    # ax = country_info.reset_index().plot(x="index", y=["casesLog", "deathsLog", "PredictionLog"])
+    # ax = country_info.reset_index().plot(x="index", y=["cases", "deaths"])
     if log_scale:
-        ax.set_yscale('log')
+        ax.set_yscale("log")
     plt.xlabel("date")
 
     # plt.ylabel("log_10")
@@ -234,7 +255,7 @@ def plot_country_log(country, all_results, country_info, log_scale):
                   .format(country, all_results["cases"]["reg_error_pct"],
                           all_results["cases"]["daily_growth_pct"]))
     folder_images = "saved_images"
-    image_name = 'img_log10_{}_{}.png'.format(country, "log" if log_scale else "normal")
+    image_name = "img_log10_{}_{}.png".format(country, "log" if log_scale else "normal")
     plt.savefig(os.path.join(folder_images, image_name))
     plt.savefig(os.path.join("docs", "assets", "img", image_name))
     return image_name
@@ -268,7 +289,7 @@ def regress_predict_data(data_name, country_info):
         models_results.append(results)
 
     model_results_best = \
-        sorted(models_results, key = lambda result: result['reg_error_pct'])[0]
+        sorted(models_results, key = lambda result: result["reg_error_pct"])[0]
     print("Chose {} regression (error={:.1f})"
           .format(model_results_best["prediction_type"],
                   model_results_best["reg_error_pct"]))
@@ -278,7 +299,7 @@ def regress_predict_data(data_name, country_info):
     prediction = int(country_info[column_name_prediction][-1])
     return country_info, {
         **model_results_best,
-        "last_update": int(country_info[data_name].dropna(how='any')[-1]),
+        "last_update": int(country_info[data_name].dropna(how="any")[-1]),
         "prediction": prediction,
     }
 
@@ -302,7 +323,7 @@ def process_plot_country(country):
     return all_results
 
 def save_json(file_name, content):
-    with open(file_name, 'w') as outfile:
+    with open(file_name, "w") as outfile:
         json.dump(content, outfile)
 
 def get_countries(world_info):
@@ -322,7 +343,7 @@ for index, country in enumerate(countries):
         image_info = process_plot_country(country)
         images_info.append(image_info)
     except ValueError as e:
-        print("No case found for {}".format(country))
+        print("No case found for {} (error: {})".format(country, error))
         continue
     print()
 
