@@ -116,9 +116,15 @@ world_info = world_info.set_index(["date"])
 world_info.sort_values(by="date")
 all_countries_world = set(world_info.countriesAndTerritories)
 
+
+def add_future_index(country_info, number_days_future):
+    dates_extended = pd.date_range(country_info.index[0], periods=number_days_future)
+    ix_dates_extended = pd.DatetimeIndex(country_info.index).union(pd.DatetimeIndex(dates_extended))
+    return country_info.reindex(ix_dates_extended)
+
 def get_country_info(country):
     country_info = world_info[world_info["countriesAndTerritories"].isin([country])]
-    return country_info.loc[:args.start_date]
+    return add_future_index(country_info.loc[:args.start_date], args.days_predict)
 
 countries_max_cases_dict = {
     country: get_country_info(country)["cases"].max()
@@ -207,13 +213,6 @@ def add_country_info_mapped_for_prediction(country_info, data_name, applied_func
 def pow_10(x):
     return math.pow(10, x)
 
-
-def add_future_index(country_info, number_days_future):
-    dates_extended = pd.date_range(country_info.index[0], periods=number_days_future)
-    ix_dates_extended = pd.DatetimeIndex(country_info.index).union(pd.DatetimeIndex(dates_extended))
-    return country_info.reindex(ix_dates_extended)
-
-
 def add_linear_regression_log_and_prediction(country_info, data_name, applied_func, inverse_func, prediction_type):
     # fit linear regression
     column_applied_func = get_column_name_func(data_name, prediction_type, True, False)
@@ -228,7 +227,6 @@ def add_linear_regression_log_and_prediction(country_info, data_name, applied_fu
     reg_error_pct = (1 - linear_regressor.score(X, Y)) * 100
 
     # predict
-    country_info = add_future_index(country_info, args.days_predict)
     X_extended = country_info.index.to_numpy(dtype=np.float32).reshape(-1, 1)
     Y_pred = linear_regressor.predict(X_extended)
 
