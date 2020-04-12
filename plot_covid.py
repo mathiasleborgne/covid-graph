@@ -22,6 +22,7 @@ import argparse
 
     Todo:
         - anchor links
+        - index is returned at reindexing...why?
         - for logistics
             - fix daily growth
             - compute max on smoothed curve
@@ -152,6 +153,30 @@ def smooth(y):
     # no need to shift
     return y_smooth
 
+def smooth_max(country_info, data_name):
+    y_smooth = country_info[data_name + "Smooth"]
+    max_y = y_smooth.max()
+    argmax_y = y_smooth.idxmax(axis=1)
+    return max_y, argmax_y
+
+def is_peak(country_info, data_name):
+    max_country, argmax_country = smooth_max(country_info, data_name)
+    country_data = country_info[data_name].dropna(how="any")
+    country_data_smooth = country_info[data_name + "Smooth"].dropna(how="any")
+
+    min_days_post_peak = 6
+    today = country_data.index[-1]
+    days_after_peak = (today - argmax_country).days
+    latest_value = country_data_smooth[-1]
+    print("latest_value:", latest_value)
+    print("max_country:", max_country)
+    print("argmax_country:", argmax_country)
+    print("today:", today)
+    decrease_pct = float(max_country - latest_value) / max_country * 100.
+
+    print("decrease: {} pct after {} days".format(decrease_pct, days_after_peak))
+    # todo: add decrease condition
+    return days_after_peak >= min_days_post_peak and decrease_pct > 10.
 
 def logistics(z, l_max):
     # logistics: y = l_max/(1+exp(a*x+b)) = l_max/(1+exp(z))
@@ -273,6 +298,8 @@ def get_applied_inverse_func(prediction_type, country_info, data_name):
 def regress_predict(prediction_type, country_info, data_name):
     applied_func, inverse_func = get_applied_inverse_func(prediction_type, country_info, data_name)
     country_info = add_country_info_mapped_for_prediction(country_info, data_name, inverse_func, prediction_type)
+    peak = is_peak(country_info, data_name) # needs smooth column addition...
+    print("is peak? {}".format(peak))
     updated_country_info, results = \
         add_linear_regression_log_and_prediction(
             country_info, data_name, applied_func, inverse_func, prediction_type)
@@ -342,7 +369,8 @@ for index, country in enumerate(countries):
         print("Processing {} ({}/{})".format(country, index + 1, len(countries)))
         image_info = process_plot_country(country)
         images_info.append(image_info)
-    except ValueError as e:
+    # except ValueError as error:
+    except ValueError as error:
         print("No case found for {} (error: {})".format(country, error))
         continue
     print()
