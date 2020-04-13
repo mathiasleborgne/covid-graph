@@ -182,7 +182,11 @@ def is_peak(country_info, data_name):
 
     print("decrease: {} pct after {} days".format(decrease_pct, days_after_peak))
     # todo: add decrease condition
-    return days_after_peak >= min_days_post_peak and decrease_pct > 10.
+    peak_detected = days_after_peak >= min_days_post_peak and decrease_pct > 10.
+    if peak_detected:
+        return argmax_country
+    else:
+        return None
 
 def logistics(z, l_max):
     # logistics: y = l_max/(1+exp(a*x+b)) = l_max/(1+exp(z))
@@ -206,17 +210,16 @@ def get_column_name_func(column_name, prediction_type, is_inverted, is_predictio
 def add_country_info_mapped_for_prediction(country_info, data_name, applied_func, prediction_type):
     column_name = get_column_name_func(data_name, prediction_type, True, False)
     country_info[column_name] = country_info[data_name].apply(applied_func)
-    # todo: dirty place
-    country_info[data_name + "Smooth"] = smooth(country_info[data_name])
     return country_info
 
 def pow_10(x):
     return math.pow(10, x)
 
-def add_linear_regression_log_and_prediction(country_info, data_name, applied_func, inverse_func, prediction_type):
+def add_linear_regression_log_and_prediction(country_info, data_name, applied_func, inverse_func, prediction_type, date_range):
     # fit linear regression
     column_applied_func = get_column_name_func(data_name, prediction_type, True, False)
-    country_info_filtered = country_info.dropna(how="any")
+    start_date, end_date = date_range
+    country_info_filtered = country_info.loc[start_date:end_date].dropna(how="any")
     X = country_info_filtered.index.to_numpy(dtype=np.float32).reshape(-1, 1)
     Y = country_info_filtered[column_applied_func]\
         .to_numpy().reshape(-1, 1)
@@ -227,7 +230,8 @@ def add_linear_regression_log_and_prediction(country_info, data_name, applied_fu
     reg_error_pct = (1 - linear_regressor.score(X, Y)) * 100
 
     # predict
-    X_extended = country_info.index.to_numpy(dtype=np.float32).reshape(-1, 1)
+    country_info_ranged = country_info.loc[start_date:end_date]
+    X_extended = country_info_ranged.index.to_numpy(dtype=np.float32).reshape(-1, 1)
     Y_pred = linear_regressor.predict(X_extended)
 
     # compute daily multiplicative factor
@@ -242,10 +246,10 @@ def add_linear_regression_log_and_prediction(country_info, data_name, applied_fu
     # add to dataframe
     prediction_log = pd.Series(Y_pred.ravel(),
                                name=get_column_name_func(data_name, prediction_type, True, True),
-                               index=country_info.index)
+                               index=country_info_ranged.index)
     prediction = pd.Series(Y_pred.ravel(),
                            name=get_column_name_func(data_name, prediction_type, False, True),
-                           index=country_info.index).apply(applied_func)
+                           index=country_info_ranged.index).apply(applied_func)
     country_info = pd.concat([country_info, prediction, prediction_log],
                               axis=1, sort=False)
     results = {
@@ -293,23 +297,24 @@ def get_applied_inverse_func(prediction_type, country_info, data_name):
         inverse_func = log10_filter
     return applied_func, inverse_func
 
-def regress_predict(prediction_type, country_info, data_name):
+def regress_predict(prediction_type, country_info, data_name, date_range):
     applied_func, inverse_func = get_applied_inverse_func(prediction_type, country_info, data_name)
     country_info = add_country_info_mapped_for_prediction(country_info, data_name, inverse_func, prediction_type)
-    peak = is_peak(country_info, data_name) # needs smooth column addition...
-    print("is peak? {}".format(peak))
     updated_country_info, results = \
         add_linear_regression_log_and_prediction(
-            country_info, data_name, applied_func, inverse_func, prediction_type)
+            country_info, data_name, applied_func, inverse_func, prediction_type, date_range)
     return updated_country_info, results
 
-def regress_predict_data(data_name, country_info):
+def get_latest_value(pd_series):
+    return pd_series.dropna(how="any")[-1]
+
+def regress_predict_data(data_name, country_info, date_range):
     prediction_types = ["Logistics", "Exponential"]
     # todo: add predictions to country_info as pointer
     models_results = []
     for prediction_type in prediction_types:
         updated_country_info, results = \
-            regress_predict(prediction_type, country_info, data_name)
+            regress_predict(prediction_type, country_info, data_name, date_range)
         country_info = updated_country_info
         models_results.append(results)
 
@@ -321,10 +326,10 @@ def regress_predict_data(data_name, country_info):
 
     column_name_prediction = \
         get_column_name_func(data_name, model_results_best["prediction_type"], False, True)
-    prediction = int(country_info[column_name_prediction][-1])
+    prediction = int(get_latest_value(country_info[column_name_prediction]))
     return country_info, {
         **model_results_best,
-        "last_update": int(country_info[data_name].dropna(how="any")[-1]),
+        "last_update": int(get_latest_value(country_info[data_name])),
         "prediction": prediction,
     }
 
@@ -334,7 +339,15 @@ def process_plot_country(country):
     all_results = {}
 
     for data_name in data_names:
-        updated_country_info, country_results_data = regress_predict_data(data_name, country_info)
+        country_info[data_name + "Smooth"] = smooth(country_info[data_name])
+        peak_date = is_peak(country_info, data_name) # needs smooth column addition...
+        print("is peak? {} - {}".format(peak_date, type(peak_date)))
+        start_date = args.start_date
+        end_date = peak_date if peak_date is not None else country_info.index[-1]
+            # todo: not same type...
+        print("range: {} - {}".format(start_date, end_date))
+        date_range = (start_date, end_date)
+        updated_country_info, country_results_data = regress_predict_data(data_name, country_info, date_range)
         all_results[data_name] = country_results_data
         country_info = updated_country_info
 
@@ -367,8 +380,8 @@ for index, country in enumerate(countries):
         print("Processing {} ({}/{})".format(country, index + 1, len(countries)))
         image_info = process_plot_country(country)
         images_info.append(image_info)
+    except KeyError as error:
     # except ValueError as error:
-    except ValueError as error:
         print("No case found for {} (error: {})".format(country, error))
         continue
     print()
