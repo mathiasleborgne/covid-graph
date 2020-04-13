@@ -184,7 +184,7 @@ def is_peak(country_info, data_name):
     # todo: add decrease condition
     peak_detected = days_after_peak >= min_days_post_peak and decrease_pct > 10.
     if peak_detected:
-        return argmax_country
+        return pd.Timestamp(argmax_country)
     else:
         return None
 
@@ -221,8 +221,8 @@ def add_linear_regression_log_and_prediction(country_info, data_name, applied_fu
     start_date, end_date = date_range
     country_info_filtered = country_info.loc[start_date:end_date].dropna(how="any")
     X = country_info_filtered.index.to_numpy(dtype=np.float32).reshape(-1, 1)
-    Y = country_info_filtered[column_applied_func]\
-        .to_numpy().reshape(-1, 1)
+    Y = country_info_filtered[column_applied_func].to_numpy().reshape(-1, 1)
+    print(country_info_filtered[column_applied_func])
     linear_regressor = LinearRegression()  # create object for the class
     linear_regressor.fit(X, Y)  # perform linear regression
         # can raise ValueError if no case
@@ -336,29 +336,37 @@ def regress_predict_data(data_name, country_info, date_range):
 def process_plot_country(country):
     country_info = get_country_info(country)
 
-    all_results = {}
+    country_all_results = {}
 
     for data_name in data_names:
         country_info[data_name + "Smooth"] = smooth(country_info[data_name])
         peak_date = is_peak(country_info, data_name) # needs smooth column addition...
         print("is peak? {} - {}".format(peak_date, type(peak_date)))
-        start_date = args.start_date
-        end_date = peak_date if peak_date is not None else country_info.index[-1]
+        start_date = pd.Timestamp(args.start_date)
+        prediction_date = pd.Timestamp(country_info.index[-1])
             # todo: not same type...
-        print("range: {} - {}".format(start_date, end_date))
-        date_range = (start_date, end_date)
-        updated_country_info, country_results_data = regress_predict_data(data_name, country_info, date_range)
-        all_results[data_name] = country_results_data
+        if peak_date is None:
+            print("range: {} - {}".format(start_date, prediction_date))
+            date_range = (start_date, prediction_date)
+            updated_country_info, country_results_data = regress_predict_data(data_name, country_info, date_range)
+        else:
+            # print("range: {} - {}".format(start_date, peak_date))
+            # date_range = (start_date, peak_date)
+            # updated_country_info, country_results_data = regress_predict_data(data_name, country_info, date_range)
+            print("range: {} - {}".format(peak_date, prediction_date))
+            date_range = (peak_date, prediction_date)
+            updated_country_info, country_results_data = regress_predict_data(data_name, country_info, date_range)
+        country_all_results[data_name] = country_results_data
         country_info = updated_country_info
 
-    image_name_log = plot_country_log(country, all_results, country_info, True)
-    image_name_normal = plot_country_log(country, all_results, country_info, False)
-    all_results = { **all_results,
+    image_name_log = plot_country_log(country, country_all_results, country_info, True)
+    image_name_normal = plot_country_log(country, country_all_results, country_info, False)
+    country_all_results = { **country_all_results,
         "country": country,
         "image_name_log": image_name_log,
         "image_name_normal": image_name_normal,
     }
-    return all_results
+    return country_all_results
 
 def save_json(file_name, content):
     with open(file_name, "w") as outfile:
