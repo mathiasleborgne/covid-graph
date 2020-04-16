@@ -193,6 +193,14 @@ def is_peak(country_info, data_name):
 def logistics_full(x, a, b, l_max):
     return l_max/(1+np.exp(a*x+b))
 
+def bell_full(x, a_log, b_log, a_exp, b_exp, l_max, argmax_float, country_info):
+    # todo: remove the b_exp by constraining on l_max
+    return np.piecewise(x, [x <= argmax_float , x > argmax_float],
+                        [lambda x: logistics_full(x, a_log, b_log, l_max),
+                         # lambda x: exponential_full(x, a_exp, b_exp)])
+                         lambda x: exponential_full(x - argmax_float, a_exp, np.log(l_max))])
+
+
 def logistics(z, l_max):
     # logistics: y = l_max/(1+exp(a*x+b)) = l_max/(1+exp(z))
     return l_max / (1. + np.exp(z))
@@ -301,6 +309,13 @@ def get_applied_inverse_func(prediction_type, country_info, data_name):
     logistics_maxed = lambda x, a, b: logistics_full(x, a, b, l_max)
     if prediction_type == "Logistics":
         applied_func = logistics_maxed
+    elif prediction_type == "Bell":
+        index_float = get_float_index(country_info)
+        argmax_loc = country_info.index.get_loc(argmax_country)
+        argmax_float = index_float[argmax_loc]
+        applied_func = lambda x, a_log, b_log, a_exp, b_exp: \
+            bell_full(x, a_log, b_log, a_exp, b_exp, l_max, argmax_float, country_info)
+
     else:
         applied_func = exponential_full
     return applied_func
@@ -316,7 +331,8 @@ def get_latest_value(pd_series):
     return pd_series.dropna(how="any")[-1]
 
 def regress_predict_data(data_name, country_info, date_range):
-    prediction_types = ["Logistics", "Exponential"]
+    # todo: forbid bell if peak is too close
+    prediction_types = ["Logistics", "Exponential", "Bell"]
     # todo: add predictions to country_info as pointer
     models_results = []
     for prediction_type in prediction_types:
@@ -395,7 +411,7 @@ for index, country in enumerate(countries):
         print("Processing {} ({}/{})".format(country, index + 1, len(countries)))
         image_info = process_plot_country(country)
         images_info.append(image_info)
-    except KeyError as error:
+    except IOError as error:
     # except ValueError as error:
         print("No case found for {} (error: {})".format(country, error))
         continue
