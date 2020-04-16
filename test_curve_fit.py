@@ -3,12 +3,13 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 def func(x, a, b, c):
-    return np.piecewise(x, [x < 2, x >= 2], [lambda x: 3/2*x, lambda x: -3/2*x+6])
+    return np.piecewise(x, [x < 2, x >= 2], [lambda x: a*x, lambda x: -b*x+c])
 # Define the data to be fit with some noise:
 
+real_func_base = lambda x: func(x, 3/2, 3/2, 6)
 
 xdata = np.linspace(0, 4, 50)
-y = func(xdata, 2.5, 1.3, 0.5)
+y = real_func_base(xdata)
 np.random.seed(1729)
 y_noise = 0.2 * np.random.normal(size=xdata.size)
 ydata = y + y_noise

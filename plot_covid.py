@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
+from sklearn.metrics import mean_absolute_error
 import json
 import math
 import os
 import datetime
 import numpy as np
+import scipy
 import pandas as pd
 import requests
 from tqdm import tqdm
@@ -134,7 +136,7 @@ countries_max_cases_dict = {
 all_countries = [country
                  for country, max_cases in countries_max_cases_dict.items()
                  if max_cases > min_cases]
-print("Countries:", all_countries)
+print("Countries:", sorted(all_countries))
 
 
 # log10
@@ -188,6 +190,9 @@ def is_peak(country_info, data_name):
     else:
         return None
 
+def logistics_full(x, a, b, l_max):
+    return l_max/(1+np.exp(a*x+b))
+
 def logistics(z, l_max):
     # logistics: y = l_max/(1+exp(a*x+b)) = l_max/(1+exp(z))
     return l_max / (1. + np.exp(z))
@@ -207,40 +212,44 @@ def get_column_name_func(column_name, prediction_type, is_inverted, is_predictio
         column_name_func = column_name_func + "Inv"
     return column_name_func
 
-def add_country_info_mapped_for_prediction(country_info, data_name, applied_func, prediction_type):
-    column_name = get_column_name_func(data_name, prediction_type, True, False)
-    country_info[column_name] = country_info[data_name].apply(applied_func)
-    return country_info
+def exponential_full(x, a, b):
+    return np.exp(a*x+b)
 
 def pow_10(x):
     return math.pow(10, x)
 
-def add_linear_regression_log_and_prediction(country_info, data_name, applied_func, inverse_func, prediction_type, date_range):
+def get_float_index(country_info_ranged):
+    return np.linspace(0, 1, len(country_info_ranged.index))
+
+def add_linear_regression_log_and_prediction(
+    country_info, data_name, applied_func, prediction_type, date_range):
     # fit linear regression
     column_applied_func = get_column_name_func(data_name, prediction_type, True, False)
     start_date, end_date = date_range
-    country_info_filtered = country_info.loc[start_date:end_date].dropna(how="any")
-    X = country_info_filtered.index.to_numpy(dtype=np.float32).reshape(-1, 1)
-    Y = country_info_filtered[column_applied_func].to_numpy().reshape(-1, 1)
-    print(country_info_filtered[column_applied_func])
-    linear_regressor = LinearRegression()  # create object for the class
-    linear_regressor.fit(X, Y)  # perform linear regression
-        # can raise ValueError if no case
-    # regression error
-    reg_error_pct = (1 - linear_regressor.score(X, Y)) * 100
+    # country_info_ranged = country_info.loc[start_date:end_date]
+    country_info_ranged = country_info
+    # country_info_filtered = country_info.loc[start_date:end_date].dropna(how="any")
+    country_info_filtered = country_info.dropna(how="any")
+    X = country_info_filtered.index.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()
+    X_extended = get_float_index(country_info_ranged)
+        # todo back to timestamps?
+    X = X_extended[:len(country_info_filtered.index)]
+    Y = country_info_filtered[data_name].to_numpy().reshape(-1, 1).ravel()
+
+    popt, pcov = scipy.optimize.curve_fit(applied_func, X, Y)
+    applied_func_params = lambda x: applied_func(x, *popt)
+
+    reg_error_pct = mean_absolute_error(Y, applied_func_params(X))/ np.mean(Y) * 100
+    print('reg_error_pct', reg_error_pct)
 
     # predict
-    country_info_ranged = country_info.loc[start_date:end_date]
-    X_extended = country_info_ranged.index.to_numpy(dtype=np.float32).reshape(-1, 1)
-    Y_pred = linear_regressor.predict(X_extended)
+    # X_extended = country_info_ranged.index.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()
+    Y_pred = applied_func_params(X_extended)
 
     # compute daily multiplicative factor
-        # todo: calculate once
-
     # eg for Exponential:
     # ln(Y) = a*t+b --> Y(t) = B*exp(a*t) --> Y(t+1) = B*exp(a)*exp(a*t) = exp(a)*Y(t)
-    coeff_daily = applied_func(Y_pred[1][0] - Y_pred[0][0])
-    daily_growth_pct = (coeff_daily - 1.) * 100
+    daily_growth_pct = (applied_func_params(X[-1]) - applied_func_params(X[-2]))/applied_func_params(X[-1]) * 100
     print("{} grow of {} pct each day".format(data_name, daily_growth_pct))
 
     # add to dataframe
@@ -249,7 +258,7 @@ def add_linear_regression_log_and_prediction(country_info, data_name, applied_fu
                                index=country_info_ranged.index)
     prediction = pd.Series(Y_pred.ravel(),
                            name=get_column_name_func(data_name, prediction_type, False, True),
-                           index=country_info_ranged.index).apply(applied_func)
+                           index=country_info_ranged.index)
     country_info = pd.concat([country_info, prediction, prediction_log],
                               axis=1, sort=False)
     results = {
@@ -288,21 +297,19 @@ def plot_country_log(country, all_results, country_info, log_scale):
     return image_name
 
 def get_applied_inverse_func(prediction_type, country_info, data_name):
+    l_max, argmax_country = smooth_max(country_info, data_name)
+    logistics_maxed = lambda x, a, b: logistics_full(x, a, b, l_max)
     if prediction_type == "Logistics":
-        l_max = country_info[data_name].max()
-        applied_func = lambda z: logistics(z, l_max)
-        inverse_func = lambda y: inverse_logistics(y, l_max)
+        applied_func = logistics_maxed
     else:
-        applied_func = pow_10
-        inverse_func = log10_filter
-    return applied_func, inverse_func
+        applied_func = exponential_full
+    return applied_func
 
 def regress_predict(prediction_type, country_info, data_name, date_range):
-    applied_func, inverse_func = get_applied_inverse_func(prediction_type, country_info, data_name)
-    country_info = add_country_info_mapped_for_prediction(country_info, data_name, inverse_func, prediction_type)
+    applied_func = get_applied_inverse_func(prediction_type, country_info, data_name)
     updated_country_info, results = \
         add_linear_regression_log_and_prediction(
-            country_info, data_name, applied_func, inverse_func, prediction_type, date_range)
+            country_info, data_name, applied_func, prediction_type, date_range)
     return updated_country_info, results
 
 def get_latest_value(pd_series):
