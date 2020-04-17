@@ -3,7 +3,13 @@
 This repo makes graphs for coronavirus cases from [this data source](https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide)
 to publish them to [this github page](https://mathiasleborgne.github.io/covid-graph/).
 
-![Cases/Deaths 03/10/2020](ScreenshotApril10.png "Cases/Deaths 03/10/2020")
+## Example April 10
+
+![Cases/Deaths 04/10/2020](ScreenshotApril10.png "Cases/Deaths 04/10/2020")
+
+## Example April 17 (Italy)
+
+![Cases/Deaths 04/17/2020](ScreenshotApril17.png "Cases/Deaths 04/17/2020")
 
 
 ## Install and build
