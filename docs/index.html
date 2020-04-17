@@ -61,11 +61,17 @@
         </div>
       </div>
 
+      <div class="row pb-4">
+          <div class="col-12">
+              <input type="text" name="searchbox" id="searchbox" class="filterinput form-control" placeholder="Search countries...">
+          </div>
+      </div>
+
       <div class="row">
         {% for country_info in site.data.images_info %}
           <div class="col-sm">
-            <!-- <div class="card" style="width: 18rem;"> -->
-            <div class="card" style="width: 26rem;">
+            <div class="card" style="width: 26rem;" data-role="country-card">
+              <h5 class="card-title">{{ country_info.country }}</h5>
 
               <ul class="nav nav-tabs" id="ScalesTab" role="tablist">
                 <li class="nav-item">
@@ -150,5 +156,16 @@
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+    <script>
+      $(document).ready(function() {
+          $("#searchbox").on("keyup", function() {
+              var value = $(this).val().toLowerCase();
+              $('div[data-role="country-card"]').filter(function() {
+                  $(this).toggle($(this).find('h5').text().toLowerCase().indexOf(value) > -1)
+              });
+          });
+      });
+    </script>
   </body>
 </html>
