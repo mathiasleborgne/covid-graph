@@ -7,48 +7,37 @@ import datetime
 import numpy as np
 import scipy
 import pandas as pd
-import requests
-from tqdm import tqdm
 from sklearn.linear_model import LinearRegression
 import argparse
+
+from fetch_excel import fetch_excel
 
 
 """ This script:
         - gets an Excel file with all countries information
         - makes a pandas dataframe, filtered by date
-        - computes a linear regression on the figures with
+        - computes a curve fit on the figures with
             - exponential model
             - logistics model
+            - logistics then exponential model (piecewise)
         - chooses best model and predicts a few days ahead
         - plots the figures and prediction
 
     Todo:
+        - nav bar
+        - more models
         - anchor links
         - index is returned at reindexing...why?
         - for logistics
             - fix daily growth
-            - compute max on smoothed curve
             - use past data
-        - models:
-            post peak model
         - use https://covid19api.com/#details
 """
-
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--reload", help="reload xlsx", action="store_true")
-parser.add_argument("--start_date", help="Date in format 2020-3-1", default="2020-3-1")
-parser.add_argument("--country", help="Select a specific country", default="France")
-parser.add_argument("--favorite", help="Favorite countries", action="store_true")
-parser.add_argument("--all", help="All countries", action="store_true")
-parser.add_argument("--show", help="Show images", action="store_true")
-parser.add_argument("--temp_curves", help="Show temporary curves", action="store_true")
-
-parser.add_argument("--days_predict", help="Number of days to predict in the future", default=7, type=int)
-args = parser.parse_args()
-
-# constants
+# constants --------------------------------------
 min_cases = 100
+min_days_post_peak = 8
+min_decrease_post_peak = 10.
+number_days_future_default = 7
 favorite_countries = [
     "France",
     "Spain",
@@ -60,45 +49,30 @@ favorite_countries = [
 ]
 data_names = ["cases", "deaths"]
 
+# parser -------------------------------------------
+parser = argparse.ArgumentParser()
+parser.add_argument("--reload", help="reload xlsx", action="store_true")
+parser.add_argument("--start_date", help="Date in format 2020-3-1", default="2020-3-1")
+parser.add_argument("--country", help="Select a specific country", default="France")
+parser.add_argument("--favorite", help="Favorite countries", action="store_true")
+parser.add_argument("--all", help="All countries", action="store_true")
+parser.add_argument("--show", help="Show images", action="store_true")
+parser.add_argument("--temp_curves", help="Show temporary curves", action="store_true")
+
+parser.add_argument("--days_predict", help="Number of days to predict in the future", default=number_days_future_default, type=int)
+args = parser.parse_args()
+
+
 # https://www.data.gouv.fr/fr/datasets/cas-confirmes-dinfection-au-covid-19-par-region/
 url_input = "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide"
 file_name_output = "COVID-19-geographic-disbtribution-worldwide.xlsx"
-folder_xlsx = "."
-
-def get_html_text(url_input):
-    # get html from url
-    request = requests.get(url_input)
-    return request.text
-
-def get_xlsx_url(html_text):
-    # get xlsx address by taking 1st .xlsx ocurrence
-    for line in html_text.split("\n"):
-    # example: <div class="media-left"><i class="media-object fa fa-download" aria-hidden="true"></i></div><div class="media-body"><a href="https://www.ecdc.europa.eu/sites/default/files/documents/COVID-19-geographic-disbtribution-worldwide-2020-03-21.xlsx" type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; length=232484" title="Open file in new window" target="_blank" data-toggle="tooltip" data-placement="bottom">Download today’s data on the geographic distribution of COVID-19 cases worldwide</a><span> - EN - [XLSX-227.04 KB]</span></div>
-        if "media-object" in line and ".xlsx" in line:
-            return line.split("href=\"")[1].split("\" type=")[0]
-    return None
-
-def save_xlsx(xlsx_url, file_name_output):
-    # download xlsx from .xlsx url
-    # https://stackoverflow.com/questions/22676/how-do-i-download-a-file-over-http-using-python
-    response = requests.get(xlsx_url, stream=True)
-    path_output = os.path.join(folder_xlsx, file_name_output)
-    with open(path_output, "wb") as handle:
-        for data in tqdm(response.iter_content()):
-            handle.write(data)
-
-def fetch_excel():
-    html_text = get_html_text(url_input)
-    xlsx_url = get_xlsx_url(html_text)
-    save_xlsx(xlsx_url, file_name_output)
-
 
 if args.reload:
-    fetch_excel()
+    fetch_excel(url_input, file_name_output)
 try:
     world_info = pd.read_excel(file_name_output)
 except FileNotFoundError as e:
-    fetch_excel()
+    fetch_excel(url_input, file_name_output)
     world_info = pd.read_excel(file_name_output)
 
 # Excel fields are:
@@ -138,13 +112,7 @@ all_countries = [country
                  if max_cases > min_cases]
 print("Countries:", sorted(all_countries))
 
-
-# log10
-def log10_filter(x):
-    if x <= 1:
-        return 0.
-    else:
-        return np.log10(x)
+# math utils -----------------------
 
 def shift(xs, n):
     if n >= 0:
@@ -152,7 +120,7 @@ def shift(xs, n):
     else:
         return np.r_[xs[-n:], np.full(-n, np.nan)]
 
-def smooth(y):
+def smooth_curve(y):
     n_pts_box = 6
     box = np.ones(n_pts_box)/n_pts_box
 
@@ -167,44 +135,43 @@ def smooth_max(country_info, data_name):
     argmax_y = y_smooth.idxmax(axis=1)
     return max_y, argmax_y
 
+def logistics_full(x, a, b, l_max):
+    return l_max/(1+np.exp(a*x+b))
+
+def logistics_exp_full(x, a_log, b_log, a_exp, b_exp, l_max, argmax_float):
+    """ exponential is constrained on b_exp, considering the exponential starts
+        at l_max:
+        In log: ln(y) - ln(l_max) = a_exp*(x - argmax_peak)
+        In not-log: y = exp(a_exp*(x - argmax_peak) + ln(l_max))
+    """
+    return np.piecewise(x, [x <= argmax_float , x > argmax_float],
+                        [lambda x: logistics_full(x, a_log, b_log, l_max),
+                         lambda x: exponential_full(x - argmax_float, a_exp, np.log(l_max))])
+
+def exponential_full(x, a, b):
+    return np.exp(a*x+b)
+
+def get_float_index(country_info_ranged):
+    return np.linspace(0, 1, len(country_info_ranged.index))
+
+
 def get_peak_date(country_info, data_name):
     max_country, argmax_country = smooth_max(country_info, data_name)
     country_data = country_info[data_name].dropna(how="any")
     country_data_smooth = country_info[data_name + "Smooth"].dropna(how="any")
 
-    min_days_post_peak = 8
     today = country_data.index[-1]
     days_after_peak = (today - argmax_country).days
     latest_value = country_data_smooth[-1]
     decrease_pct = float(max_country - latest_value) / max_country * 100.
     # todo: decrease condition on mean after peak
 
-    peak_detected = days_after_peak >= min_days_post_peak and decrease_pct > 10.
+    peak_detected = days_after_peak >= min_days_post_peak \
+        and decrease_pct > min_decrease_post_peak
     if peak_detected:
         return pd.Timestamp(argmax_country)
     else:
         return None
-
-def logistics_full(x, a, b, l_max):
-    return l_max/(1+np.exp(a*x+b))
-
-def bell_full(x, a_log, b_log, a_exp, b_exp, l_max, argmax_float, country_info):
-    # todo: remove the b_exp by constraining on l_max
-    return np.piecewise(x, [x <= argmax_float , x > argmax_float],
-                        [lambda x: logistics_full(x, a_log, b_log, l_max),
-                         # lambda x: exponential_full(x, a_exp, b_exp)])
-                         lambda x: exponential_full(x - argmax_float, a_exp, np.log(l_max))])
-
-
-def logistics(z, l_max):
-    # logistics: y = l_max/(1+exp(a*x+b)) = l_max/(1+exp(z))
-    return l_max / (1. + np.exp(z))
-
-def inverse_logistics(y, l_max):
-    # inverse logistics is a*x+b = ln(l_max/y-1)
-    if y == 0. or y == l_max:
-        return np.nan
-    return np.log((l_max / y) - 1.)
 
 def get_column_name_func(column_name, prediction_type, is_inverted, is_prediction):
     # todo: inverted and prediction: compatible?
@@ -215,18 +182,11 @@ def get_column_name_func(column_name, prediction_type, is_inverted, is_predictio
         column_name_func = column_name_func + "Inv"
     return column_name_func
 
-def exponential_full(x, a, b):
-    return np.exp(a*x+b)
-
-def pow_10(x):
-    return math.pow(10, x)
-
-def get_float_index(country_info_ranged):
-    return np.linspace(0, 1, len(country_info_ranged.index))
-
+# regression -----------------------------
 def add_linear_regression_log_and_prediction(
     country_info, data_name, applied_func, prediction_type):
-    # fit linear regression
+    """ use scipy's curve_fit to fit any function
+    """
     column_applied_func = get_column_name_func(data_name, prediction_type, True, False)
     # start_date, end_date = date_range
     # country_info_ranged = country_info.loc[start_date:end_date]
@@ -271,7 +231,65 @@ def add_linear_regression_log_and_prediction(
     }
     return country_info, results
 
-# Plot
+
+def get_applied_func(prediction_type, country_info, data_name):
+    """ Get the model function for curve fitting.
+        Some models need some additional information to work better (maximum, argmax)
+    """
+    l_max, argmax_country = smooth_max(country_info, data_name)
+    logistics_maxed = lambda x, a, b: logistics_full(x, a, b, l_max)
+    if prediction_type == "Logistics":
+        return logistics_maxed
+    elif prediction_type == "Logistics+Exponential":
+        index_float = get_float_index(country_info)
+        argmax_loc = country_info.index.get_loc(argmax_country)
+        argmax_float = index_float[argmax_loc]
+        return lambda x, a_log, b_log, a_exp, b_exp: \
+            logistics_exp_full(x, a_log, b_log, a_exp, b_exp, l_max, argmax_float)
+    else:
+        return exponential_full
+
+def regress_predict(prediction_type, country_info, data_name):
+    applied_func = get_applied_func(prediction_type, country_info, data_name)
+    updated_country_info, results = \
+        add_linear_regression_log_and_prediction(
+            country_info, data_name, applied_func, prediction_type)
+    return updated_country_info, results
+
+def get_latest_value(pd_series):
+    return pd_series.dropna(how="any")[-1]
+    """ Get the model function for curve fitting.
+        Some models need some help to work better (maximum, argmax)
+    """
+
+def regress_predict_data(data_name, country_info, is_peak):
+    prediction_types = ["Logistics", "Exponential"]
+    if is_peak: # forbid logistics+exp if peak is too close
+        prediction_types.append("Logistics+Exponential")
+    # todo: add predictions to country_info as pointer
+    models_results = []
+    for prediction_type in prediction_types:
+        updated_country_info, results = \
+            regress_predict(prediction_type, country_info, data_name)
+        country_info = updated_country_info
+        models_results.append(results)
+
+    model_results_best = \
+        sorted(models_results, key = lambda result: result["reg_error_pct"])[0]
+    print("    Chose {} regression (error={:.1f})"
+          .format(model_results_best["prediction_type"],
+                  model_results_best["reg_error_pct"]))
+
+    column_name_prediction = \
+        get_column_name_func(data_name, model_results_best["prediction_type"], False, True)
+    prediction = int(get_latest_value(country_info[column_name_prediction]))
+    return country_info, {
+        **model_results_best,
+        "last_update": int(get_latest_value(country_info[data_name])),
+        "prediction": prediction,
+    }
+
+# Plot ----------------------------------
 def plot_country_log(country, all_results, country_info, log_scale):
     prediction_columns_names = [
         get_column_name_func(data_name, all_results[data_name]["prediction_type"], False, True)
@@ -298,67 +316,13 @@ def plot_country_log(country, all_results, country_info, log_scale):
     plt.savefig(os.path.join("docs", "assets", "img", image_name))
     return image_name
 
-def get_applied_inverse_func(prediction_type, country_info, data_name):
-    l_max, argmax_country = smooth_max(country_info, data_name)
-    logistics_maxed = lambda x, a, b: logistics_full(x, a, b, l_max)
-    if prediction_type == "Logistics":
-        applied_func = logistics_maxed
-    elif prediction_type == "Bell":
-        index_float = get_float_index(country_info)
-        argmax_loc = country_info.index.get_loc(argmax_country)
-        argmax_float = index_float[argmax_loc]
-        applied_func = lambda x, a_log, b_log, a_exp, b_exp: \
-            bell_full(x, a_log, b_log, a_exp, b_exp, l_max, argmax_float, country_info)
-
-    else:
-        applied_func = exponential_full
-    return applied_func
-
-def regress_predict(prediction_type, country_info, data_name):
-    applied_func = get_applied_inverse_func(prediction_type, country_info, data_name)
-    updated_country_info, results = \
-        add_linear_regression_log_and_prediction(
-            country_info, data_name, applied_func, prediction_type)
-    return updated_country_info, results
-
-def get_latest_value(pd_series):
-    return pd_series.dropna(how="any")[-1]
-
-def regress_predict_data(data_name, country_info, is_peak):
-    # todo: forbid bell if peak is too close
-    prediction_types = ["Logistics", "Exponential"]
-    if is_peak:
-        prediction_types.append("Bell")
-    # todo: add predictions to country_info as pointer
-    models_results = []
-    for prediction_type in prediction_types:
-        updated_country_info, results = \
-            regress_predict(prediction_type, country_info, data_name)
-        country_info = updated_country_info
-        models_results.append(results)
-
-    model_results_best = \
-        sorted(models_results, key = lambda result: result["reg_error_pct"])[0]
-    print("    Chose {} regression (error={:.1f})"
-          .format(model_results_best["prediction_type"],
-                  model_results_best["reg_error_pct"]))
-
-    column_name_prediction = \
-        get_column_name_func(data_name, model_results_best["prediction_type"], False, True)
-    prediction = int(get_latest_value(country_info[column_name_prediction]))
-    return country_info, {
-        **model_results_best,
-        "last_update": int(get_latest_value(country_info[data_name])),
-        "prediction": prediction,
-    }
-
 def process_plot_country(country):
     country_info = get_country_info(country)
     country_all_results = {}
 
     for data_name in data_names:
         print("Analyzing {}".format(data_name))
-        country_info[data_name + "Smooth"] = smooth(country_info[data_name])
+        country_info[data_name + "Smooth"] = smooth_curve(country_info[data_name])
         peak_date = get_peak_date(country_info, data_name) # needs smooth column addition...
         is_peak = peak_date is not None
         print("    is peak? {} - date max: {}".format(is_peak, peak_date))
