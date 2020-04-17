@@ -24,9 +24,10 @@ from fetch_excel import fetch_excel
         - plots the figures and prediction
 
     Todo:
+        - anchor links
+        - navigate countries
         - nav bar
         - more models
-        - anchor links
         - index is returned at reindexing...why?
         - for logistics
             - fix daily growth
@@ -107,10 +108,10 @@ countries_max_cases_dict = {
     for country in all_countries_world
 }
 # countries_population_dict = dict(zip(world_info.countriesAndTerritories, world_info.popData2018))
-all_countries = [country
-                 for country, max_cases in countries_max_cases_dict.items()
-                 if max_cases > min_cases]
-print("Countries:", sorted(all_countries))
+all_countries = sorted([country
+                        for country, max_cases in countries_max_cases_dict.items()
+                        if max_cases > min_cases])
+print("Countries:", all_countries)
 
 # math utils -----------------------
 
