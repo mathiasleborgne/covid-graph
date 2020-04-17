@@ -286,6 +286,7 @@ def regress_predict_data(data_name, country_info, is_peak):
     return country_info, {
         **model_results_best,
         "last_update": int(get_latest_value(country_info[data_name])),
+        "is_peak_str": "Yes" if is_peak else "No",
         "prediction": prediction,
     }
 

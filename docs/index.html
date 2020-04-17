@@ -29,16 +29,23 @@
           <blockquote class="blockquote">
             <p class="mb-0">
               This website shows the number of cases and deaths of Covid-19 by country
-              (last update: {{ site.data.global_info.date_last_update }}).
+              (last update: {{ site.data.global_info.date_last_update }}), tries to make predictions with an algorithm.
             </p>
             <p class="mb-2">
               As growth is currently exponential
               (see explanation <a href="https://youtu.be/Kas0tIxDvrg">here</a>),
               they are displayed by default in a logarithmic manner,
               which means that each additional unit on the y-axis makes the number 10 times bigger.
-              Curves are compared to an exponential curve (when it doesn't look flat yet) or a logistic curve (when it's already starting to flatten). The model with smallest error is chosen.
+              Curves are compared to:
+              <ul>
+                <li> an exponential curve (when it doesn't look flat yet) </li>
+                <li> or a logistic curve (when it's already starting to flatten). </li>
+                <li> or a logistic, then exponential curve (when the peak seems past). </li>
+              </ul>
+              The model with smallest error is chosen.
               Prediction is thus made, with an error rate (hoping that the numbers are overrated...).
               Only countries with more than {{ site.data.global_info.min_cases }} cases are shown.
+              Please note that the predictions are made by an algorithm, no manual corrections are performed, and the algorithm can make mistakes for some cases.
             </p>
             <footer class="blockquote-footer">
               Data source:
@@ -112,6 +119,12 @@
                       <th scope="row">Error in prediction (%)</th>
                       {% for data_info in country_info %}
                         <td>{{ data_info[1].reg_error_pct_int }}</td>
+                      {% endfor %}
+                    </tr>
+                    <tr>
+                      <th scope="row">Peak reached?</th>
+                      {% for data_info in country_info %}
+                        <td>{{ data_info[1].is_peak_str }}</td>
                       {% endfor %}
                     </tr>
                   </tbody>
