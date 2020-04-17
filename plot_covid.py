@@ -167,23 +167,18 @@ def smooth_max(country_info, data_name):
     argmax_y = y_smooth.idxmax(axis=1)
     return max_y, argmax_y
 
-def is_peak(country_info, data_name):
+def get_peak_date(country_info, data_name):
     max_country, argmax_country = smooth_max(country_info, data_name)
     country_data = country_info[data_name].dropna(how="any")
     country_data_smooth = country_info[data_name + "Smooth"].dropna(how="any")
 
-    min_days_post_peak = 6
+    min_days_post_peak = 8
     today = country_data.index[-1]
     days_after_peak = (today - argmax_country).days
     latest_value = country_data_smooth[-1]
-    print("latest_value:", latest_value)
-    print("max_country:", max_country)
-    print("argmax_country:", argmax_country)
-    print("today:", today)
     decrease_pct = float(max_country - latest_value) / max_country * 100.
+    # todo: decrease condition on mean after peak
 
-    print("decrease: {} pct after {} days".format(decrease_pct, days_after_peak))
-    # todo: add decrease condition
     peak_detected = days_after_peak >= min_days_post_peak and decrease_pct > 10.
     if peak_detected:
         return pd.Timestamp(argmax_country)
@@ -230,13 +225,13 @@ def get_float_index(country_info_ranged):
     return np.linspace(0, 1, len(country_info_ranged.index))
 
 def add_linear_regression_log_and_prediction(
-    country_info, data_name, applied_func, prediction_type, date_range):
+    country_info, data_name, applied_func, prediction_type):
     # fit linear regression
     column_applied_func = get_column_name_func(data_name, prediction_type, True, False)
-    start_date, end_date = date_range
+    # start_date, end_date = date_range
     # country_info_ranged = country_info.loc[start_date:end_date]
-    country_info_ranged = country_info
     # country_info_filtered = country_info.loc[start_date:end_date].dropna(how="any")
+    country_info_ranged = country_info
     country_info_filtered = country_info.dropna(how="any")
     X = country_info_filtered.index.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()
     X_extended = get_float_index(country_info_ranged)
@@ -248,7 +243,6 @@ def add_linear_regression_log_and_prediction(
     applied_func_params = lambda x: applied_func(x, *popt)
 
     reg_error_pct = mean_absolute_error(Y, applied_func_params(X))/ np.mean(Y) * 100
-    print('reg_error_pct', reg_error_pct)
 
     # predict
     # X_extended = country_info_ranged.index.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()
@@ -258,7 +252,7 @@ def add_linear_regression_log_and_prediction(
     # eg for Exponential:
     # ln(Y) = a*t+b --> Y(t) = B*exp(a*t) --> Y(t+1) = B*exp(a)*exp(a*t) = exp(a)*Y(t)
     daily_growth_pct = (applied_func_params(X[-1]) - applied_func_params(X[-2]))/applied_func_params(X[-1]) * 100
-    print("{} grow of {} pct each day".format(data_name, daily_growth_pct))
+    # print("{} grow of {} pct each day".format(data_name, daily_growth_pct))
 
     # add to dataframe
     prediction_log = pd.Series(Y_pred.ravel(),
@@ -320,30 +314,32 @@ def get_applied_inverse_func(prediction_type, country_info, data_name):
         applied_func = exponential_full
     return applied_func
 
-def regress_predict(prediction_type, country_info, data_name, date_range):
+def regress_predict(prediction_type, country_info, data_name):
     applied_func = get_applied_inverse_func(prediction_type, country_info, data_name)
     updated_country_info, results = \
         add_linear_regression_log_and_prediction(
-            country_info, data_name, applied_func, prediction_type, date_range)
+            country_info, data_name, applied_func, prediction_type)
     return updated_country_info, results
 
 def get_latest_value(pd_series):
     return pd_series.dropna(how="any")[-1]
 
-def regress_predict_data(data_name, country_info, date_range):
+def regress_predict_data(data_name, country_info, is_peak):
     # todo: forbid bell if peak is too close
-    prediction_types = ["Logistics", "Exponential", "Bell"]
+    prediction_types = ["Logistics", "Exponential"]
+    if is_peak:
+        prediction_types.append("Bell")
     # todo: add predictions to country_info as pointer
     models_results = []
     for prediction_type in prediction_types:
         updated_country_info, results = \
-            regress_predict(prediction_type, country_info, data_name, date_range)
+            regress_predict(prediction_type, country_info, data_name)
         country_info = updated_country_info
         models_results.append(results)
 
     model_results_best = \
         sorted(models_results, key = lambda result: result["reg_error_pct"])[0]
-    print("Chose {} regression (error={:.1f})"
+    print("    Chose {} regression (error={:.1f})"
           .format(model_results_best["prediction_type"],
                   model_results_best["reg_error_pct"]))
 
@@ -358,27 +354,19 @@ def regress_predict_data(data_name, country_info, date_range):
 
 def process_plot_country(country):
     country_info = get_country_info(country)
-
     country_all_results = {}
 
     for data_name in data_names:
+        print("Analyzing {}".format(data_name))
         country_info[data_name + "Smooth"] = smooth(country_info[data_name])
-        peak_date = is_peak(country_info, data_name) # needs smooth column addition...
-        print("is peak? {} - {}".format(peak_date, type(peak_date)))
+        peak_date = get_peak_date(country_info, data_name) # needs smooth column addition...
+        is_peak = peak_date is not None
+        print("    is peak? {} - date max: {}".format(is_peak, peak_date))
         start_date = pd.Timestamp(args.start_date)
         prediction_date = pd.Timestamp(country_info.index[-1])
             # todo: not same type...
-        if peak_date is None:
-            print("range: {} - {}".format(start_date, prediction_date))
-            date_range = (start_date, prediction_date)
-            updated_country_info, country_results_data = regress_predict_data(data_name, country_info, date_range)
-        else:
-            # print("range: {} - {}".format(start_date, peak_date))
-            # date_range = (start_date, peak_date)
-            # updated_country_info, country_results_data = regress_predict_data(data_name, country_info, date_range)
-            print("range: {} - {}".format(peak_date, prediction_date))
-            date_range = (peak_date, prediction_date)
-            updated_country_info, country_results_data = regress_predict_data(data_name, country_info, date_range)
+        updated_country_info, country_results_data = \
+            regress_predict_data(data_name, country_info, is_peak)
         country_all_results[data_name] = country_results_data
         country_info = updated_country_info
 
@@ -411,8 +399,7 @@ for index, country in enumerate(countries):
         print("Processing {} ({}/{})".format(country, index + 1, len(countries)))
         image_info = process_plot_country(country)
         images_info.append(image_info)
-    except IOError as error:
-    # except ValueError as error:
+    except ValueError as error:
         print("No case found for {} (error: {})".format(country, error))
         continue
     print()
