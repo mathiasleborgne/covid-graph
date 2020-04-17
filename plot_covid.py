@@ -363,7 +363,8 @@ for index, country in enumerate(countries):
         print("Processing {} ({}/{})".format(country, index + 1, len(countries)))
         image_info = process_plot_country(country)
         images_info.append(image_info)
-    except ValueError as error:
+    except (ValueError, RuntimeError) as error:
+        # RuntimeError shall happen when curve_fit doesn't find any parameter
         print("No case found for {} (error: {})".format(country, error))
         continue
     print()
