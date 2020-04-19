@@ -9,13 +9,15 @@ import scipy
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 import argparse
+from pprint import pprint
 
 from fetch_excel import fetch_excel
+from fetch_apis import get_country_by_api, get_all_countries_info_by_api
 
 
 """ This script:
-        - gets an Excel file with all countries information
-        - makes a pandas dataframe, filtered by date
+        - gets a JSON/Excel file with all countries information
+        - makes a pandas dataframe per country, filtered by date
         - computes a curve fit on the figures with
             - exponential model
             - logistics model
@@ -24,7 +26,11 @@ from fetch_excel import fetch_excel
         - plots the figures and prediction
 
     Todo:
+        - more information from web API
+        - expand country/country specific page
+        - JS plots
         - anchor links
+        - facebook likes count
         - navigate countries
         - nav bar
         - more models
@@ -32,23 +38,13 @@ from fetch_excel import fetch_excel
         - for logistics
             - fix daily growth
             - use past data
-        - use https://covid19api.com/#details
 """
 # constants --------------------------------------
-min_cases = 100
+min_new_cases = 100
+min_total_cases = 1000
 min_days_post_peak = 8
 min_decrease_post_peak = 10.
 number_days_future_default = 7
-favorite_countries = [
-    "France",
-    "Spain",
-    "United_States_of_America",
-    "United_Kingdom",
-    "Italy",
-    "Belgium",
-    "Germany",
-]
-data_names = ["cases", "deaths"]
 
 # parser -------------------------------------------
 parser = argparse.ArgumentParser()
@@ -58,11 +54,25 @@ parser.add_argument("--country", help="Select a specific country", default="Fran
 parser.add_argument("--favorite", help="Favorite countries", action="store_true")
 parser.add_argument("--all", help="All countries", action="store_true")
 parser.add_argument("--show", help="Show images", action="store_true")
+parser.add_argument("--excel", help="Get data from excel instead of api", action="store_true")
 parser.add_argument("--temp_curves", help="Show temporary curves", action="store_true")
 
 parser.add_argument("--days_predict", help="Number of days to predict in the future", default=number_days_future_default, type=int)
 args = parser.parse_args()
+if args.excel:
+    data_names = ["cases", "deaths"]
+else:
+    data_names = ["new_confirmed", "new_deaths"]
 
+favorite_countries = [
+    "France",
+    "Spain",
+    "United_States_of_America" if args.excel else "USA",
+    "United_Kingdom" if args.excel else "UK",
+    "Italy",
+    "Belgium",
+    "Germany",
+]
 
 # https://www.data.gouv.fr/fr/datasets/cas-confirmes-dinfection-au-covid-19-par-region/
 url_input = "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide"
@@ -88,6 +98,7 @@ except FileNotFoundError as e:
 #    countryterritoryCode
 #    popData2018
 
+# todo: put this part in excel fetch script
 world_info["date"] = world_info["dateRep"]
 world_info = world_info.set_index(["date"])
 world_info.sort_values(by="date")
@@ -99,18 +110,34 @@ def add_future_index(country_info, number_days_future):
     ix_dates_extended = pd.DatetimeIndex(country_info.index).union(pd.DatetimeIndex(dates_extended))
     return country_info.reindex(ix_dates_extended)
 
-def get_country_info(country):
-    country_info = world_info[world_info["countriesAndTerritories"].isin([country])]
+def get_country_info(country, force_excel=False):
+    if args.excel or force_excel:
+        country_info = world_info[world_info["countriesAndTerritories"].isin([country])]
+    else:
+        country_info = get_country_by_api(country_code_dict[country])
+    if country_info is None:
+        return None
     return add_future_index(country_info.loc[:args.start_date], args.days_predict)
 
-countries_max_cases_dict = {
-    country: get_country_info(country)["cases"].max()
-    for country in all_countries_world
-}
-# countries_population_dict = dict(zip(world_info.countriesAndTerritories, world_info.popData2018))
+if args.excel:
+    countries_max_cases_dict = {
+        country: get_country_info(country, force_excel=True)["cases"].max()
+        for country in all_countries_world
+    }
+    # countries_population_dict = dict(zip(world_info.countriesAndTerritories, world_info.popData2018))
+else:
+    all_countries_reduced_data = get_all_countries_info_by_api()
+    country_code_dict = {
+        country_reduced_data["name"]: country_reduced_data["code"]
+        for country_reduced_data in all_countries_reduced_data
+    }
+    countries_max_cases_dict = {
+        country_reduced_data["name"]: country_reduced_data["latest_data"]["confirmed"]
+        for country_reduced_data in all_countries_reduced_data
+    }
 all_countries = sorted([country
                         for country, max_cases in countries_max_cases_dict.items()
-                        if max_cases > min_cases])
+                        if max_cases > (min_new_cases if args.excel else min_total_cases)])
 print("Countries:", all_countries)
 
 # math utils -----------------------
@@ -164,6 +191,8 @@ def get_peak_date(country_info, data_name):
     today = country_data.index[-1]
     days_after_peak = (today - argmax_country).days
     latest_value = country_data_smooth[-1]
+    if max_country == 0.:
+        return None
     decrease_pct = float(max_country - latest_value) / max_country * 100.
     # todo: decrease condition on mean after peak
 
@@ -192,13 +221,14 @@ def add_linear_regression_log_and_prediction(
     # start_date, end_date = date_range
     # country_info_ranged = country_info.loc[start_date:end_date]
     # country_info_filtered = country_info.loc[start_date:end_date].dropna(how="any")
-    country_info_ranged = country_info
-    country_info_filtered = country_info.dropna(how="any")
-    X = country_info_filtered.index.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()
-    X_extended = get_float_index(country_info_ranged)
+    country_data = country_info[data_name]
+    country_data_ranged = country_data # todo: useful to add range?
+    country_data_filtered = country_data.dropna(how="any")
+    X = country_data_filtered.index.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()
+    X_extended = get_float_index(country_data_ranged)
         # todo back to timestamps?
-    X = X_extended[:len(country_info_filtered.index)]
-    Y = country_info_filtered[data_name].to_numpy().reshape(-1, 1).ravel()
+    X = X_extended[:len(country_data_filtered.index)]
+    Y = country_data_filtered.to_numpy().reshape(-1, 1).ravel()
 
     popt, pcov = scipy.optimize.curve_fit(applied_func, X, Y)
     applied_func_params = lambda x: applied_func(x, *popt)
@@ -206,7 +236,7 @@ def add_linear_regression_log_and_prediction(
     reg_error_pct = mean_absolute_error(Y, applied_func_params(X))/ np.mean(Y) * 100
 
     # predict
-    # X_extended = country_info_ranged.index.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()
+    # X_extended = country_data_ranged.index.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()
     Y_pred = applied_func_params(X_extended)
 
     # compute daily multiplicative factor
@@ -218,10 +248,10 @@ def add_linear_regression_log_and_prediction(
     # add to dataframe
     prediction_log = pd.Series(Y_pred.ravel(),
                                name=get_column_name_func(data_name, prediction_type, True, True),
-                               index=country_info_ranged.index)
+                               index=country_data_ranged.index)
     prediction = pd.Series(Y_pred.ravel(),
                            name=get_column_name_func(data_name, prediction_type, False, True),
-                           index=country_info_ranged.index)
+                           index=country_data_ranged.index)
     country_info = pd.concat([country_info, prediction, prediction_log],
                               axis=1, sort=False)
     results = {
@@ -300,7 +330,7 @@ def plot_country_log(country, all_results, country_info, log_scale):
     if args.temp_curves:
         prediction_columns_names += ["casesSmooth", "deathsSmooth"]
     ax = country_info.reset_index()\
-        .plot(x="index", y=["cases", "deaths"] + prediction_columns_names)
+        .plot(x="index", y=data_names + prediction_columns_names)
     # ax = country_info.reset_index().plot(x="index", y=["casesLog", "deathsLog", "PredictionLog"])
     # ax = country_info.reset_index().plot(x="index", y=["cases", "deaths"])
     if log_scale:
@@ -309,17 +339,17 @@ def plot_country_log(country, all_results, country_info, log_scale):
 
     # plt.ylabel("log_10")
     if args.show:
+        case_data_name = data_names[0]
         plt.title("{} - Cases/Deaths\n(Reg. error: {:.1f} pct / Daily growth: {:.1f} pct)"
-                  .format(country, all_results["cases"]["reg_error_pct"],
-                          all_results["cases"]["daily_growth_pct"]))
+                  .format(country, all_results[case_data_name]["reg_error_pct"],
+                          all_results[case_data_name]["daily_growth_pct"]))
     folder_images = "saved_images"
     image_name = "img_log10_{}_{}.png".format(country, "log" if log_scale else "normal")
     plt.savefig(os.path.join(folder_images, image_name))
     plt.savefig(os.path.join("docs", "assets", "img", image_name))
     return image_name
 
-def process_plot_country(country):
-    country_info = get_country_info(country)
+def process_plot_country(country, country_info):
     country_all_results = {}
 
     for data_name in data_names:
@@ -363,8 +393,12 @@ images_info = []
 countries = get_countries(world_info)
 for index, country in enumerate(countries):
     try:
+        country_info = get_country_info(country)
+        if country_info is None:
+            print("No case found for {}".format(country))
+            continue
         print("Processing {} ({}/{})".format(country, index + 1, len(countries)))
-        image_info = process_plot_country(country)
+        image_info = process_plot_country(country, country_info)
         images_info.append(image_info)
     except (ValueError, RuntimeError) as error:
         # RuntimeError shall happen when curve_fit doesn't find any parameter
@@ -375,7 +409,8 @@ for index, country in enumerate(countries):
 global_info = {
     "days_predict": args.days_predict,
     "favorite_countries": favorite_countries,
-    "min_cases": min_cases,
+    "min_new_cases": min_new_cases,
+    "min_total_cases": min_total_cases,
     "date_last_update": datetime.date.today().strftime("%B %d, %Y"),
 }
 
