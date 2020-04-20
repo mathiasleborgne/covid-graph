@@ -26,9 +26,10 @@ from fetch_apis import get_country_by_api, get_all_countries_info_by_api
         - plots the figures and prediction
 
     Todo:
+        - fix columns (too many info in JS)
         - more information from web API
         - expand country/country specific page
-        - JS plots
+        - show peak
         - anchor links
         - facebook likes count
         - navigate countries
@@ -368,11 +369,25 @@ def process_plot_country(country, country_info):
 
     image_name_log = plot_country_log(country, country_all_results, country_info, True)
     image_name_normal = plot_country_log(country, country_all_results, country_info, False)
+    index_str_list = [str(timestamp) for timestamp in country_info.index.tolist()]
+
+    def export_data(data_name):
+        return country_info[data_name].values.tolist()
+    def export_data_prediction(data_name):
+        column_name = get_column_name_func(
+            data_name, country_all_results[data_name]["prediction_type"], False, True)
+        return export_data(column_name)
+
     country_all_results = {
         "country_data": country_all_results,
         "country": country,
         "image_name_log": image_name_log,
         "image_name_normal": image_name_normal,
+        "dates": index_str_list,
+        "new_confirmed": export_data("new_confirmed"),
+        "new_deaths": export_data("new_deaths"),
+        "prediction_confirmed": export_data_prediction("new_confirmed"),
+        "prediction_deaths": export_data_prediction("new_deaths"),
     }
     return country_all_results
 

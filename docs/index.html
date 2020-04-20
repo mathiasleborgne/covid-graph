@@ -70,7 +70,7 @@
       <div class="row">
         {% for country_info in site.data.images_info %}
           <div class="col-sm">
-            <div class="card" style="width: 26rem;" data-role="country-card">
+            <div class="card" style="width: 40rem;" data-role="country-card">
               <h5 class="card-title">{{ country_info.country }}</h5>
 
               <ul class="nav nav-tabs" id="ScalesTab" role="tablist">
@@ -83,10 +83,10 @@
               </ul>
               <div class="tab-content" id="ScalesTabContent">
                 <div class="tab-pane fade show active" id="log-{{ country_info.country }}" role="tabpanel" aria-labelledby="log-tab-{{ country_info.country }}">
-                  <img src="./assets/img/{{ country_info.image_name_log }}" class="card-img-top" alt="{{ country_info.country }}">
+                  <div id="{{ country_info.country }}-plotly-div-log" alt="{{ country_info.country }}"><!-- Plotly chart will be drawn inside this DIV --></div>
                 </div>
                 <div class="tab-pane fade" id="normal-{{ country_info.country }}" role="tabpanel" aria-labelledby="normal-tab-{{ country_info.country }}">
-                  <img src="./assets/img/{{ country_info.image_name_normal }}" class="card-img-top" alt="{{ country_info.country }}">
+                  <div id="{{ country_info.country }}-plotly-div-normal" alt="{{ country_info.country }}"><!-- Plotly chart will be drawn inside this DIV --></div>
                 </div>
               </div>
 
@@ -156,8 +156,12 @@
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <!-- Load plotly.js into the DOM -->
+    <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+
 
     <script>
+      // search ----------------------
       $(document).ready(function() {
           $("#searchbox").on("keyup", function() {
               var value = $(this).val().toLowerCase();
@@ -166,6 +170,89 @@
               });
           });
       });
+
+      // plots ----------------------
+      var country_traces = {
+        {% for country_info in site.data.images_info %}
+          "{{ country_info.country}}-plotly-div": [
+              {
+                name: 'New cases',
+                x: {{ country_info.dates | jsonify }},
+                y: {{ country_info.new_confirmed | jsonify }},
+                mode: 'lines',
+                line: {
+                  // dark orange #FF8C00 (255,140,0)
+                  color: 'rgb(255,128,0)',
+                  width: 2
+                },
+                type: 'scatter'
+              },
+              {
+                name: 'Prediction cases',
+                x: {{ country_info.dates | jsonify }},
+                y: {{ country_info.prediction_confirmed | jsonify }},
+                mode: 'lines',
+                line: {
+                  dash: 'dot',
+                  color: 'rgb(255, 178, 102)',
+                  width: 2
+                },
+                type: 'scatter'
+              },
+              {
+                name: 'New deaths',
+                x: {{ country_info.dates | jsonify }},
+                y: {{ country_info.new_deaths | jsonify }},
+                mode: 'lines',
+                line: {
+                  color: 'rgb(255, 51, 51)',
+                  width: 2
+                },
+                type: 'scatter'
+              },
+              {
+                name: 'Prediction deaths',
+                x: {{ country_info.dates | jsonify }},
+                y: {{ country_info.prediction_deaths | jsonify }},
+                mode: 'lines',
+                line: {
+                  dash: 'dot',
+                  color: 'rgb(255, 151, 151)',
+                  width: 2
+                },
+                type: 'scatter'
+              },
+            ]
+          {% unless forloop.last %},{% endunless %}
+        {% endfor %}
+      };
+
+      var x_axis_layout = {
+        // font: {size: 12},
+        type: 'date',
+        autorange: true
+      };
+      var layout_log = {
+        xaxis: x_axis_layout,
+        yaxis: {
+          type: 'log',
+          autorange: true
+        }
+        // title:'Log view'
+      };
+      var layout_normal = {
+        xaxis: x_axis_layout,
+        yaxis: {
+          autorange: true
+        }
+      };
+      for (const div_name in country_traces) {
+        Plotly.newPlot(div_name + "-log", country_traces[div_name],
+                       layout_log, {responsive: true});
+        Plotly.newPlot(div_name + "-normal", country_traces[div_name],
+                       layout_normal, {responsive: true});
+      }
+
     </script>
   </body>
 </html>
