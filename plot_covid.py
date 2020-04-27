@@ -241,7 +241,7 @@ def get_applied_func(prediction_type, country_info, data_name):
     logistics_maxed = lambda x, a, b: logistics_full(x, a, b, l_max)
     if prediction_type == "Logistics":
         return logistics_maxed
-    elif prediction_type == "Logistics+Exponential":
+    elif prediction_type == "Logistics + Exponential":
         index_float = get_float_index(country_info)
         argmax_loc = country_info.index.get_loc(argmax_country)
         argmax_float = index_float[argmax_loc]
@@ -266,7 +266,7 @@ def get_latest_value(pd_series):
 def regress_predict_data(data_name, country_info, is_peak):
     prediction_types = ["Logistics", "Exponential"]
     if is_peak: # forbid logistics+exp if peak is too close
-        prediction_types.append("Logistics+Exponential")
+        prediction_types.append("Logistics + Exponential")
     # todo: add predictions to country_info as pointer
     models_results = []
     for prediction_type in prediction_types:
