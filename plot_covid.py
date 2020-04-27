@@ -75,6 +75,11 @@ favorite_countries = [
     "Germany",
 ]
 
+improved_country_names = {
+    "USA": "United States of America",
+    "UK": "United kingdom",
+}
+
 # https://www.data.gouv.fr/fr/datasets/cas-confirmes-dinfection-au-covid-19-par-region/
 url_input = "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide"
 file_name_output = "COVID-19-geographic-disbtribution-worldwide.xlsx"
@@ -350,6 +355,12 @@ def plot_country_log(country, all_results, country_info, log_scale):
     plt.savefig(os.path.join("docs", "assets", "img", image_name))
     return image_name
 
+def improve_country_name(country_name):
+    try:
+        return improved_country_names[country_name]
+    except KeyError as e:
+        return country_name
+
 def process_plot_country(country, country_info):
     country_all_results = {}
 
@@ -380,7 +391,7 @@ def process_plot_country(country, country_info):
 
     country_all_results = {
         "country_data": country_all_results,
-        "country": country,
+        "country": improve_country_name(country),
         "image_name_log": image_name_log,
         "image_name_normal": image_name_normal,
         "dates": index_str_list,

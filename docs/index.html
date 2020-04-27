@@ -71,7 +71,7 @@
         {% for country_info in site.data.images_info %}
           <div class="col-sm">
             <div class="card" style="width: 40rem;" data-role="country-card">
-              <h5 class="card-title">{{ country_info.country }}</h5>
+              <h5 class="card-title">{{ country_info.country | replace: "_", " " }}</h5>
 
               <ul class="nav nav-tabs" id="ScalesTab" role="tablist">
                 <li class="nav-item">
