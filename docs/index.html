@@ -105,31 +105,31 @@
                   <tbody>
                     <tr>
                       <th scope="row">Last update</th>
-                      {% for data_info in country_info %}
+                      {% for data_info in country_info.country_data %}
                         <td>{{ data_info[1].last_update }}</td>
                       {% endfor %}
                     </tr>
                     <tr>
                       <th scope="row">Prediction in {{ site.data.global_info.days_predict }} days</th>
-                      {% for data_info in country_info %}
+                      {% for data_info in country_info.country_data %}
                         <td>{{ data_info[1].prediction }}</td>
                       {% endfor %}
                     </tr>
                     <tr>
                       <th scope="row">Prediction type</th>
-                      {% for data_info in country_info %}
+                      {% for data_info in country_info.country_data %}
                         <td>{{ data_info[1].prediction_type }}</td>
                       {% endfor %}
                     </tr>
                     <tr>
                       <th scope="row">Error in prediction (%)</th>
-                      {% for data_info in country_info %}
-                        <td>{{ data_info[1].reg_error_pct_int }}</td>
+                      {% for data_info in country_info.country_data %}
+                        <td>{{ data_info[1].reg_error_pct | round: 1 }}</td>
                       {% endfor %}
                     </tr>
                     <tr>
                       <th scope="row">Peak reached?</th>
-                      {% for data_info in country_info %}
+                      {% for data_info in country_info.country_data %}
                         <td>{{ data_info[1].is_peak_str }}</td>
                       {% endfor %}
                     </tr>

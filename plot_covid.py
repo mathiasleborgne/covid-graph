@@ -338,7 +338,8 @@ def process_plot_country(country):
 
     image_name_log = plot_country_log(country, country_all_results, country_info, True)
     image_name_normal = plot_country_log(country, country_all_results, country_info, False)
-    country_all_results = { **country_all_results,
+    country_all_results = {
+        "country_data": country_all_results,
         "country": country,
         "image_name_log": image_name_log,
         "image_name_normal": image_name_normal,
