@@ -41,6 +41,7 @@ from fetch_apis import get_country_by_api, get_all_countries_info_by_api
 # constants --------------------------------------
 min_new_cases = 100
 min_total_cases = 1000
+min_cases_start_date = 50
 min_days_post_peak = 8
 min_decrease_post_peak = 10.
 number_days_future_default = 14
@@ -49,7 +50,7 @@ max_countries_display = 50  # max number of countries to display
 # parser -------------------------------------------
 parser = argparse.ArgumentParser()
 parser.add_argument("--reload", help="reload xlsx", action="store_true")
-parser.add_argument("--start_date", help="Date in format 2020-3-1", default="2020-3-1")
+parser.add_argument("--start_date", help="Date in format 2020-3-1", default=None)
 parser.add_argument("--country", help="Select a specific country", default="France")
 parser.add_argument("--favorite", help="Favorite countries", action="store_true")
 parser.add_argument("--all", help="All countries", action="store_true")
@@ -112,6 +113,15 @@ world_info.sort_values(by="date")
 all_countries_world = set(world_info.countriesAndTerritories)
 
 
+def slice_from_start_date(country_info):
+    if args.start_date is None:
+        start_date = pd.Timestamp(
+            country_info[country_info["new_confirmed"] > min_cases_start_date]
+            .index[-1])
+    else:
+        start_date = args.start_date
+    return country_info.loc[:start_date]
+
 def add_future_index(country_info, number_days_future):
     dates_extended = pd.date_range(country_info.index[0], periods=number_days_future)
     ix_dates_extended = pd.DatetimeIndex(country_info.index).union(pd.DatetimeIndex(dates_extended))
@@ -124,7 +134,9 @@ def get_country_info(country, force_excel=False):
         country_info = get_country_by_api(country_code_dict[country])
     if country_info is None:
         return None
-    return add_future_index(country_info.loc[:args.start_date], args.days_predict)
+    country_info = slice_from_start_date(country_info)
+    country_info = add_future_index(country_info, args.days_predict)
+    return country_info
 
 if args.excel:
     countries_max_cases_dict = {
@@ -369,7 +381,7 @@ def process_plot_country(country, country_info):
         peak_date = get_peak_date(country_info, data_name) # needs smooth column addition...
         is_peak = peak_date is not None
         print("    is peak? {} - date max: {}".format(is_peak, peak_date))
-        start_date = pd.Timestamp(args.start_date)
+        start_date = pd.Timestamp(country_info.index[0])
         prediction_date = pd.Timestamp(country_info.index[-1])
             # todo: not same type...
         updated_country_info, country_results_data = \
