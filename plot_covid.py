@@ -46,6 +46,7 @@ min_total_cases = 1000
 min_days_post_peak = 8
 min_decrease_post_peak = 10.
 number_days_future_default = 7
+max_countries_display = 50  # max number of countries to display
 
 # parser -------------------------------------------
 parser = argparse.ArgumentParser()
@@ -141,9 +142,15 @@ else:
         country_reduced_data["name"]: country_reduced_data["latest_data"]["confirmed"]
         for country_reduced_data in all_countries_reduced_data
     }
-all_countries = sorted([country
-                        for country, max_cases in countries_max_cases_dict.items()
-                        if max_cases > (min_new_cases if args.excel else min_total_cases)])
+
+countries_sorted = sorted(countries_max_cases_dict.items(),
+                          key=lambda item: item[1], reverse=True)
+country_min_cases = [
+    country_name
+    for country_name, max_cases in countries_sorted
+    if max_cases > (min_new_cases if args.excel else min_total_cases)
+]
+all_countries = country_min_cases[:max_countries_display]
 print("Countries:", all_countries)
 
 # math utils -----------------------
@@ -417,18 +424,19 @@ def get_countries(world_info):
 
 images_info = []
 countries = get_countries(world_info)
-for index, country in enumerate(countries):
+for index, country_name in enumerate(countries):
     try:
-        country_info = get_country_info(country)
+        country_info = get_country_info(country_name)
         if country_info is None:
-            print("No case found for {}".format(country))
+            print("No case found for {}".format(country_name))
             continue
-        print("Processing {} ({}/{})".format(country, index + 1, len(countries)))
-        image_info = process_plot_country(country, country_info)
+        print("Processing {} - {} cases ({}/{})"
+              .format(country_name, countries_max_cases_dict[country_name], index + 1, len(countries)))
+        image_info = process_plot_country(country_name, country_info)
         images_info.append(image_info)
     except (ValueError, RuntimeError) as error:
         # RuntimeError shall happen when curve_fit doesn't find any parameter
-        print("No case found for {} (error: {})".format(country, error))
+        print("No case found for {} (error: {})".format(country_name, error))
         continue
     print()
 
