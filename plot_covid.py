@@ -7,7 +7,6 @@ import datetime
 import numpy as np
 import scipy
 import pandas as pd
-from sklearn.linear_model import LinearRegression
 import argparse
 from pprint import pprint
 
@@ -26,10 +25,10 @@ from fetch_apis import get_country_by_api, get_all_countries_info_by_api
         - plots the figures and prediction
 
     Todo:
-        - fix columns (too many info in JS)
         - more information from web API
         - expand country/country specific page
         - show peak
+        - round predictions
         - anchor links
         - facebook likes count
         - navigate countries
@@ -45,7 +44,7 @@ min_new_cases = 100
 min_total_cases = 1000
 min_days_post_peak = 8
 min_decrease_post_peak = 10.
-number_days_future_default = 7
+number_days_future_default = 14
 max_countries_display = 50  # max number of countries to display
 
 # parser -------------------------------------------
@@ -77,6 +76,8 @@ favorite_countries = [
 ]
 
 improved_country_names = {
+    # when you get a bad name like those on the left,
+    # replace by bame on the right
     "USA": "United States of America",
     "UK": "United kingdom",
 }
@@ -138,7 +139,7 @@ else:
         country_reduced_data["name"]: country_reduced_data["code"]
         for country_reduced_data in all_countries_reduced_data
     }
-    countries_max_cases_dict = {
+    countries_max_cases_dict = { # todo: also check daily cases? careful with China...
         country_reduced_data["name"]: country_reduced_data["latest_data"]["confirmed"]
         for country_reduced_data in all_countries_reduced_data
     }
@@ -198,10 +199,8 @@ def get_float_index(country_info_ranged):
 
 def get_peak_date(country_info, data_name):
     max_country, argmax_country = smooth_max(country_info, data_name)
-    country_data = country_info[data_name].dropna(how="any")
     country_data_smooth = country_info[data_name + "Smooth"].dropna(how="any")
-
-    today = country_data.index[-1]
+    today = country_info[data_name].dropna(how="any").index[-1]
     days_after_peak = (today - argmax_country).days
     latest_value = country_data_smooth[-1]
     if max_country == 0.:
@@ -259,13 +258,10 @@ def add_linear_regression_log_and_prediction(
     # print("{} grow of {} pct each day".format(data_name, daily_growth_pct))
 
     # add to dataframe
-    prediction_log = pd.Series(Y_pred.ravel(),
-                               name=get_column_name_func(data_name, prediction_type, True, True),
-                               index=country_data_ranged.index)
     prediction = pd.Series(Y_pred.ravel(),
                            name=get_column_name_func(data_name, prediction_type, False, True),
                            index=country_data_ranged.index)
-    country_info = pd.concat([country_info, prediction, prediction_log],
+    country_info = pd.concat([country_info, prediction],
                               axis=1, sort=False)
     results = {
         "prediction_type": prediction_type,
@@ -302,9 +298,6 @@ def regress_predict(prediction_type, country_info, data_name):
 
 def get_latest_value(pd_series):
     return pd_series.dropna(how="any")[-1]
-    """ Get the model function for curve fitting.
-        Some models need some help to work better (maximum, argmax)
-    """
 
 def regress_predict_data(data_name, country_info, is_peak):
     prediction_types = ["Logistics", "Exponential"]

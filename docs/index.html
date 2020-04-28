@@ -122,9 +122,9 @@
                       {% endfor %}
                     </tr>
                     <tr>
-                      <th scope="row">Error in prediction (%)</th>
+                      <th scope="row">Error in prediction</th>
                       {% for data_info in country_info.country_data %}
-                        <td>{{ data_info[1].reg_error_pct | round: 1 }}</td>
+                        <td>{{ data_info[1].reg_error_pct | round: 1 }}%</td>
                       {% endfor %}
                     </tr>
                     <tr>
