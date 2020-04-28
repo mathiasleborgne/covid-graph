@@ -28,7 +28,6 @@ from fetch_apis import get_country_by_api, get_all_countries_info_by_api
         - more information from web API
         - expand country/country specific page
         - show peak
-        - round predictions
         - anchor links
         - facebook likes count
         - navigate countries
@@ -258,7 +257,7 @@ def add_linear_regression_log_and_prediction(
     # print("{} grow of {} pct each day".format(data_name, daily_growth_pct))
 
     # add to dataframe
-    prediction = pd.Series(Y_pred.ravel(),
+    prediction = pd.Series(np.round(Y_pred).ravel(),
                            name=get_column_name_func(data_name, prediction_type, False, True),
                            index=country_data_ranged.index)
     country_info = pd.concat([country_info, prediction],
