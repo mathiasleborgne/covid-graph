@@ -266,10 +266,15 @@ def regress_predict_data(data_name, country_info, is_peak):
     # todo: add predictions to country_info as pointer
     models_results = []
     for prediction_type in prediction_types:
-        updated_country_info, results = \
-            regress_predict(prediction_type, country_info, data_name)
-        country_info = updated_country_info
-        models_results.append(results)
+        try:
+            updated_country_info, results = \
+                regress_predict(prediction_type, country_info, data_name)
+            country_info = updated_country_info
+            models_results.append(results)
+        except RuntimeError as error:
+            # RuntimeError shall happen when curve_fit doesn't find any parameter
+            print("    Couldn't find a fit for {} ({})".format(prediction_type, error))
+            pass
 
     model_results_best = \
         sorted(models_results, key = lambda result: result["reg_error_pct"])[0]
@@ -387,8 +392,7 @@ for index, country_name in enumerate(countries):
               .format(country_name, countries_max_cases_dict[country_name], index + 1, len(countries)))
         image_info = process_plot_country(country_name, country_info)
         images_info.append(image_info)
-    except (ValueError, RuntimeError) as error:
-        # RuntimeError shall happen when curve_fit doesn't find any parameter
+    except (ValueError, IndexError) as error:
         print("No case found for {} (error: {})".format(country_name, error))
         continue
     print()
