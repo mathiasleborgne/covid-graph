@@ -12,6 +12,7 @@ from pprint import pprint
 
 from fetch_excel import fetch_excel
 from fetch_apis import get_country_by_api, get_all_countries_info_by_api
+from math_utils import smooth_max, get_applied_func, smooth_curve, get_float_index
 
 
 """ This script:
@@ -44,7 +45,7 @@ min_total_cases = 1000
 min_cases_start_date = 50
 min_days_post_peak = 8
 min_decrease_post_peak = 10.
-number_days_future_default = 14
+number_days_future_default = 10
 max_countries_display = 50  # max number of countries to display
 
 # parser -------------------------------------------
@@ -165,48 +166,6 @@ country_min_cases = [
 all_countries = country_min_cases[:max_countries_display]
 print("Countries:", all_countries)
 
-# math utils -----------------------
-
-def shift(xs, n):
-    if n >= 0:
-        return np.r_[np.full(n, np.nan), xs[:-n]]
-    else:
-        return np.r_[xs[-n:], np.full(-n, np.nan)]
-
-def smooth_curve(y):
-    n_pts_box = 6
-    box = np.ones(n_pts_box)/n_pts_box
-
-    y_smooth = np.convolve(y, box, mode='same')
-    # y_smooth_shifted = shift(y_smooth, -int(n_pts_box/2))
-    # no need to shift
-    return y_smooth
-
-def smooth_max(country_info, data_name):
-    y_smooth = country_info[data_name + "Smooth"]
-    max_y = y_smooth.max()
-    argmax_y = y_smooth.idxmax(axis=1)
-    return max_y, argmax_y
-
-def logistics_full(x, a, b, l_max):
-    return l_max/(1+np.exp(a*x+b))
-
-def logistics_exp_full(x, a_log, b_log, a_exp, b_exp, l_max, argmax_float):
-    """ exponential is constrained on b_exp, considering the exponential starts
-        at l_max:
-        In log: ln(y) - ln(l_max) = a_exp*(x - argmax_peak)
-        In not-log: y = exp(a_exp*(x - argmax_peak) + ln(l_max))
-    """
-    return np.piecewise(x, [x <= argmax_float , x > argmax_float],
-                        [lambda x: logistics_full(x, a_log, b_log, l_max),
-                         lambda x: exponential_full(x - argmax_float, a_exp, np.log(l_max))])
-
-def exponential_full(x, a, b):
-    return np.exp(a*x+b)
-
-def get_float_index(country_info_ranged):
-    return np.linspace(0, 1, len(country_info_ranged.index))
-
 
 def get_peak_date(country_info, data_name):
     max_country, argmax_country = smooth_max(country_info, data_name)
@@ -283,22 +242,6 @@ def add_linear_regression_log_and_prediction(
     return country_info, results
 
 
-def get_applied_func(prediction_type, country_info, data_name):
-    """ Get the model function for curve fitting.
-        Some models need some additional information to work better (maximum, argmax)
-    """
-    l_max, argmax_country = smooth_max(country_info, data_name)
-    logistics_maxed = lambda x, a, b: logistics_full(x, a, b, l_max)
-    if prediction_type == "Logistics":
-        return logistics_maxed
-    elif prediction_type == "Logistics + Exponential":
-        index_float = get_float_index(country_info)
-        argmax_loc = country_info.index.get_loc(argmax_country)
-        argmax_float = index_float[argmax_loc]
-        return lambda x, a_log, b_log, a_exp, b_exp: \
-            logistics_exp_full(x, a_log, b_log, a_exp, b_exp, l_max, argmax_float)
-    else:
-        return exponential_full
 
 def regress_predict(prediction_type, country_info, data_name):
     applied_func = get_applied_func(prediction_type, country_info, data_name)
@@ -314,6 +257,8 @@ def regress_predict_data(data_name, country_info, is_peak):
     prediction_types = ["Logistics", "Exponential"]
     if is_peak: # forbid logistics+exp if peak is too close
         prediction_types.append("Logistics + Exponential")
+        prediction_types.append("Logistics(Incr) + Logistics(Decr)")
+        prediction_types.append("Logistics + Linear")
     # todo: add predictions to country_info as pointer
     models_results = []
     for prediction_type in prediction_types:
@@ -330,7 +275,7 @@ def regress_predict_data(data_name, country_info, is_peak):
 
     column_name_prediction = \
         get_column_name_func(data_name, model_results_best["prediction_type"], False, True)
-    prediction = int(get_latest_value(country_info[column_name_prediction]))
+    prediction = max(0, int(get_latest_value(country_info[column_name_prediction])))
     return country_info, {
         **model_results_best,
         "last_update": int(get_latest_value(country_info[data_name])),
