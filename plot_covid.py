@@ -124,8 +124,9 @@ def slice_from_start_date(country_info):
     return country_info.loc[:start_date]
 
 def add_future_index(country_info, number_days_future):
-    dates_extended = pd.date_range(country_info.index[0], periods=number_days_future)
-    ix_dates_extended = pd.DatetimeIndex(country_info.index).union(pd.DatetimeIndex(dates_extended))
+    dates_extended = pd.DatetimeIndex(pd.date_range(country_info.index[0], periods=number_days_future))
+    dates_original = pd.DatetimeIndex(country_info.index)
+    ix_dates_extended = dates_original.union(dates_extended)
     return country_info.reindex(ix_dates_extended)
 
 def get_country_info(country, force_excel=False):
@@ -135,6 +136,9 @@ def get_country_info(country, force_excel=False):
         country_info = get_country_by_api(country_code_dict[country])
     if country_info is None:
         return None
+    country_info = country_info.loc[~country_info.index.duplicated(keep='first')]
+        # remove duplicated indices in index
+        # https://stackoverflow.com/questions/13035764/remove-rows-with-duplicate-indices-pandas-dataframe-and-timeseries
     country_info = slice_from_start_date(country_info)
     country_info = add_future_index(country_info, args.days_predict)
     return country_info
