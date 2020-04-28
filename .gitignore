@@ -6,6 +6,7 @@ __pycache__/
 # custome
 saved_images/*
 docs/_site/*
+docs/assets/img/*
 sh.exe.stackdump
 COVID-19-geographic-disbtribution-worldwide.xlsx
 
