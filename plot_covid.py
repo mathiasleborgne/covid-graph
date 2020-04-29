@@ -26,23 +26,25 @@ from math_utils import smooth_max, get_applied_func, smooth_curve, get_float_ind
         - plots the figures and prediction
 
     Todo:
+        - sort by max cases ever?
+        - start at 50 cases
+        - spinners
+        - collapse explanation
+        - french regions?
+        - detect new_cases = delay1(deaths) + delay2(recovered)
         - more information from web API
         - expand country/country specific page
         - show peak
         - anchor links
         - facebook likes count
-        - navigate countries
-        - nav bar
-        - more models
-        - index is returned at reindexing...why?
-        - for logistics
-            - fix daily growth
-            - use past data
+        - refactor
+            - fully split maths/excel fetch
+            - objects
 """
 # constants --------------------------------------
 min_new_cases = 100
 min_total_cases = 1000
-min_cases_start_date = 50
+min_cases_start_date = 30
 min_days_post_peak = 8
 min_decrease_post_peak = 10.
 number_days_future_default = 10
