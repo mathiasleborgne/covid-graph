@@ -60,10 +60,17 @@
           </blockquote>
         </div>
       </div>
+      <div id="mySpinnerId">
+        <div class="d-flex justify-content-center">
+          <div class="spinner-border" role="status">
+            <span class="sr-only">Loading...</span>
+          </div>
+        </div>
+      </div>
 
       <div class="row pb-4">
           <div class="col-12">
-              <input type="text" name="searchbox" id="searchbox" class="filterinput form-control" placeholder="Search countries...">
+              <input type="text" name="searchbox" id="searchbox" class="d-none filterinput form-control" placeholder="Search countries...">
           </div>
       </div>
 
@@ -237,6 +244,8 @@
         // Plotly.newPlot(div_name + "-normal", country_traces[div_name],
         //                layout_normal, {responsive: true});
       }
+      $("#mySpinnerId").addClass('d-none');
+      $("#searchbox").removeClass('d-none');
 
     </script>
   </body>
