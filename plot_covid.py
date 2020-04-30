@@ -57,6 +57,7 @@ parser.add_argument("--favorite", help="Favorite countries", action="store_true"
 parser.add_argument("--all", help="All countries", action="store_true")
 parser.add_argument("--show", help="Show images", action="store_true")
 parser.add_argument("--excel", help="Get data from excel instead of api", action="store_true")
+parser.add_argument("--save_imgs", help="Save images", action="store_true")
 parser.add_argument("--temp_curves", help="Show temporary curves", action="store_true")
 
 parser.add_argument("--days_predict", help="Number of days to predict in the future", default=number_days_future_default, type=int)
@@ -316,8 +317,9 @@ def plot_country_log(country, all_results, country_info, log_scale):
                           all_results[case_data_name]["daily_growth_pct"]))
     folder_images = "saved_images"
     image_name = "img_log10_{}_{}.png".format(country, "log" if log_scale else "normal")
-    plt.savefig(os.path.join(folder_images, image_name))
-    plt.savefig(os.path.join("docs", "assets", "img", image_name))
+    if args.save_imgs:
+        plt.savefig(os.path.join(folder_images, image_name))
+        plt.savefig(os.path.join("docs", "assets", "img", image_name))
     return image_name
 
 def improve_country_name(country_name):
