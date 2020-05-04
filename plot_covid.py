@@ -84,6 +84,7 @@ improved_country_names = {
     # replace by bame on the right
     "USA": "United States of America",
     "UK": "United kingdom",
+    "S. Korea": "South Korea",
 }
 
 # https://www.data.gouv.fr/fr/datasets/cas-confirmes-dinfection-au-covid-19-par-region/

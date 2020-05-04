@@ -60,13 +60,6 @@
           </blockquote>
         </div>
       </div>
-      <div id="mySpinnerId">
-        <div class="d-flex justify-content-center">
-          <div class="spinner-border" role="status">
-            <span class="sr-only">Loading...</span>
-          </div>
-        </div>
-      </div>
 
       <div class="row pb-4">
           <div class="col-12">
@@ -80,7 +73,14 @@
             <div class="card" style="width: 40rem;" data-role="country-card">
               <h5 class="card-title">{{ country_info.country | replace: "_", " " }}</h5>
 
-              <div id="{{ country_info.country }}-plotly-div-log" alt="{{ country_info.country }}"><!-- Plotly chart will be drawn inside this DIV --></div>
+              <div id="{{ country_info.country | replace: ".", "" | replace: " ", "" }}-plotly-div-spinner">
+                <div class="d-flex justify-content-center">
+                  <div class="spinner-border" role="status">
+                    <span class="sr-only">Loading...</span>
+                  </div>
+                </div>
+              </div>
+              <div id="{{ country_info.country | replace: ".", "" | replace: " ", "" }}-plotly-div-log" alt="{{ country_info.country }}"><!-- Plotly chart will be drawn inside this DIV --></div>
 
               <div class="card-body">
                 <!-- <h5 class="card-title">{{ country_info.country }}</h5> -->
@@ -164,9 +164,10 @@
       });
 
       // plots ----------------------
+
       var country_traces = {
         {% for country_info in site.data.images_info %}
-          "{{ country_info.country}}-plotly-div": [
+          "{{ country_info.country | replace: ".", "" | replace: " ", "" }}-plotly-div": [
               {
                 name: 'New cases',
                 x: {{ country_info.dates | jsonify }},
@@ -243,8 +244,8 @@
                        layout_log, {responsive: true});
         // Plotly.newPlot(div_name + "-normal", country_traces[div_name],
         //                layout_normal, {responsive: true});
+        $("#" + div_name + "-spinner").addClass('d-none');
       }
-      $("#mySpinnerId").addClass('d-none');
       $("#searchbox").removeClass('d-none');
 
     </script>
