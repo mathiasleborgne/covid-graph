@@ -67,10 +67,15 @@ parser.add_argument("--publish_push", help="Publish data update on website", act
 
 parser.add_argument("--days_predict", help="Number of days to predict in the future", default=number_days_future_default, type=int)
 args = parser.parse_args()
-if args.excel:
-    data_names = ["cases", "deaths"]
-else:
-    data_names = ["new_confirmed", "new_deaths"]
+
+
+def get_cases_name():
+    return "new_confirmed" if not args.excel else "cases"
+
+def get_deaths_name():
+    return "new_deaths" if not args.excel else "deaths"
+
+data_names = [get_cases_name(), get_deaths_name()]
 
 favorite_countries = [
     "France",
@@ -124,7 +129,7 @@ all_countries_world = set(world_info.countriesAndTerritories)
 def slice_from_start_date(country_info):
     if args.start_date is None:
         start_date = pd.Timestamp(
-            country_info[country_info["new_confirmed"] > min_cases_start_date]
+            country_info[country_info[get_cases_name()] > min_cases_start_date]
             .index[-1])
     else:
         start_date = args.start_date
@@ -368,10 +373,10 @@ def process_plot_country(country, country_info):
         "image_name_log": image_name_log,
         "image_name_normal": image_name_normal,
         "dates": index_str_list,
-        "new_confirmed": export_data("new_confirmed"),
-        "new_deaths": export_data("new_deaths"),
-        "prediction_confirmed": export_data_prediction("new_confirmed"),
-        "prediction_deaths": export_data_prediction("new_deaths"),
+        "new_confirmed": export_data(get_cases_name()),
+        "new_deaths": export_data(get_deaths_name()),
+        "prediction_confirmed": export_data_prediction(get_cases_name()),
+        "prediction_deaths": export_data_prediction(get_deaths_name()),
     }
     return country_all_results
 
