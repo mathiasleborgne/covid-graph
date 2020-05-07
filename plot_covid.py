@@ -13,6 +13,7 @@ from pprint import pprint
 from fetch_excel import fetch_excel
 from fetch_apis import get_country_by_api, get_all_countries_info_by_api
 from math_utils import smooth_max, get_applied_func, smooth_curve, get_float_index
+from publish import push_if_outdated
 
 
 """ This script:
@@ -61,6 +62,8 @@ parser.add_argument("--show", help="Show images", action="store_true")
 parser.add_argument("--excel", help="Get data from excel instead of api", action="store_true")
 parser.add_argument("--save_imgs", help="Save images", action="store_true")
 parser.add_argument("--temp_curves", help="Show temporary curves", action="store_true")
+parser.add_argument("--publish", help="Commit data update, don't push", action="store_true")
+parser.add_argument("--publish_push", help="Publish data update on website", action="store_true")
 
 parser.add_argument("--days_predict", help="Number of days to predict in the future", default=number_days_future_default, type=int)
 args = parser.parse_args()
@@ -415,3 +418,6 @@ save_json(os.path.join("docs", "_data", "global_info.json"), global_info)
 
 if args.show and images_info:
     plt.show()
+
+if args.publish or args.publish_push:
+    push_if_outdated(args.publish_push)

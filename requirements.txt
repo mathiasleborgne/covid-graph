@@ -5,3 +5,4 @@ requests
 tqdm
 sklearn
 xlrd >= 1.0.0
+gitpython

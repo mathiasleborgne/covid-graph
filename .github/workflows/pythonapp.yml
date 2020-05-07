@@ -40,4 +40,7 @@ jobs:
       with:
         name: saved_images
         path: saved_images
+    - name: Publish from automatic commit
+      run: |
+        python plot_covid.py --all --publish_push
 
