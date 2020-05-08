@@ -13,7 +13,7 @@ from pprint import pprint
 from fetch_excel import fetch_excel
 from fetch_apis import get_country_by_api, get_all_countries_info_by_api
 from math_utils import smooth_max, get_applied_func, smooth_curve, get_float_index
-from publish import push_if_outdated
+from publish import push_if_outdated, get_today_date_str, get_date_last_update
 
 
 """ This script:
@@ -70,11 +70,16 @@ args = parser.parse_args()
 
 
 def get_cases_name():
+    """ cases columns have different names based on sources (excel/api)
+    """
     return "new_confirmed" if not args.excel else "cases"
 
 def get_deaths_name():
+    """ deaths columns have different names based on sources (excel/api)
+    """
     return "new_deaths" if not args.excel else "deaths"
 
+former_date = get_date_last_update()
 data_names = [get_cases_name(), get_deaths_name()]
 
 favorite_countries = [
@@ -415,7 +420,7 @@ global_info = {
     "favorite_countries": favorite_countries,
     "min_new_cases": min_new_cases,
     "min_total_cases": min_total_cases,
-    "date_last_update": datetime.date.today().strftime("%B %d, %Y"),
+    "date_last_update": get_today_date_str(),
 }
 
 save_json(os.path.join("docs", "_data", "images_info.json"), images_info)
@@ -425,4 +430,4 @@ if args.show and images_info:
     plt.show()
 
 if args.publish or args.publish_push:
-    push_if_outdated(args.publish_push)
+    push_if_outdated(args.publish_push, former_date)

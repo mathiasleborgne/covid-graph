@@ -5,8 +5,6 @@ from git import Repo, exc
 import json
 import datetime
 
-def get_today_date_str(): #todo: use in main
-    return datetime.date.today().strftime("%B %d, %Y")
 
 
 PATH_OF_GIT_REPO = r'.git'  # make sure .git folder is properly configured
@@ -17,15 +15,21 @@ files_to_add = [ #todo: clean paths
     "docs/_data/images_info.json",
 ]
 
-# check_today
-def is_outdated():
+
+def get_today_date_str(): #todo: use in main
+    return datetime.date.today().strftime("%B %d, %Y")
+
+def get_date_last_update():
     with open(global_file_name) as json_file:
         data = json.load(json_file)
-        date_last_update = data["date_last_update"]
-        return date_last_update != get_today_date_str()
-    return False
+        return data["date_last_update"]
+    return None
 
-
+# check_today
+def is_outdated(former_date):
+    if former_date is None:
+        return True
+    return get_date_last_update() != former_date
 
 def git_push(is_dummy, do_push):
     branch_name = "dummy_branch" if is_dummy else "master"
@@ -46,9 +50,11 @@ def git_push(is_dummy, do_push):
         origin.push()
         print("Pushed {}".format(commit_message))
 
-def push_if_outdated(do_push):
-    if is_outdated():
+def push_if_outdated(do_push, former_date):
+    if is_outdated(former_date):
         git_push(False, do_push)
+    else:
+        print("Not pushing (not outdated)")
 
 if __name__ == '__main__':
     print("is outdated:", is_outdated())
