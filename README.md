@@ -11,6 +11,10 @@ to publish them to [this github page](https://mathiasleborgne.github.io/covid-gr
 
 ![Cases/Deaths 04/17/2020](ScreenshotApril17.png "Cases/Deaths 04/17/2020")
 
+## Data processing
+
+The curves for daily new cases and deaths are fit to a list of models, and the best model is used.
+Curve fitting uses `scipy.optimize.curve_fit`.
 
 ## Install and build
 
