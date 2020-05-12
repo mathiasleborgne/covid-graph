@@ -13,7 +13,12 @@ to publish them to [this github page](https://mathiasleborgne.github.io/covid-gr
 
 ## Data processing
 
-The curves for daily new cases and deaths are fit to a list of models, and the best model is used.
+The curves for daily new cases and deaths are fit to a list of models, and the best model is used, amongst:
+
+* an increasing exponential curve (when it doesn't look flat yet)
+* or an increasing logistic curve (when it starts to flatten)
+* or a decreasing logistic, exponential or linear curve (when the peak seems past).
+
 Curve fitting uses `scipy.optimize.curve_fit`.
 
 ## Install and build
