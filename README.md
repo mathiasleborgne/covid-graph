@@ -1,7 +1,10 @@
 # covid-graph
 
-This repo makes graphs and predictions for coronavirus cases from [this data source](https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide)
-to publish them to [this github page](https://mathiasleborgne.github.io/covid-graph/).
+Code for [covid-graph website](https://mathiasleborgne.github.io/covid-graph/): graphs and predictions for daily coronavirus cases and deaths.
+
+Sources:
+* [ECDC](https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide)
+* [about-corona API](https://about-corona.net/)
 
 ## Example April 10
 
