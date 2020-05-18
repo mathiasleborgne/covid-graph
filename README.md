@@ -24,6 +24,10 @@ The curves for daily new cases and deaths are fit to a list of models, and the b
 
 Curve fitting uses `scipy.optimize.curve_fit`.
 
+## Update
+
+To update, push any commit on this server. An additional automatic commit will be triggered as a Github Action to update the site data (through API calls and scripts run).
+
 ## Install and build
 
     # make website data
