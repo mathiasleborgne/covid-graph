@@ -27,6 +27,7 @@ from publish import push_if_outdated, get_today_date_str, get_date_last_update
         - plots the figures and prediction
 
     Todo:
+        - check figures for duplicated dates
         - sort by max cases ever?
         - start at 50 cases
         - spinners
@@ -147,6 +148,8 @@ def add_future_index(country_info, number_days_future):
     return country_info.reindex(ix_dates_extended)
 
 def get_country_info(country, force_excel=False):
+    """ returns None if error/no info found
+    """
     if args.excel or force_excel:
         country_info = world_info[world_info["countriesAndTerritories"].isin([country])]
     else:
@@ -156,14 +159,27 @@ def get_country_info(country, force_excel=False):
     country_info = country_info.loc[~country_info.index.duplicated(keep='first')]
         # remove duplicated indices in index
         # https://stackoverflow.com/questions/13035764/remove-rows-with-duplicate-indices-pandas-dataframe-and-timeseries
-    country_info = slice_from_start_date(country_info)
+    try:
+        country_info = slice_from_start_date(country_info)
+    except IndexError as e:
+        print("No data found")
+        return None
     country_info = add_future_index(country_info, args.days_predict)
     return country_info
 
+def get_max_cases_country(country_name):
+    country_info = get_country_info(country_name, force_excel=True)
+    if country_info is None:
+        return None
+    else:
+        return country_info["cases"].max()
+
+
 if args.excel:
     countries_max_cases_dict = {
-        country: get_country_info(country, force_excel=True)["cases"].max()
-        for country in all_countries_world
+        country_name: get_max_cases_country(country_name)
+        for country_name in all_countries_world
+        if get_max_cases_country(country_name) is not None
     }
     # countries_population_dict = dict(zip(world_info.countriesAndTerritories, world_info.popData2018))
 else:
