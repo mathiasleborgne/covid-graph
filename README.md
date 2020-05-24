@@ -10,9 +10,7 @@ Sources:
 
 | Example May 19 (USA) | Example April 17 (Italy) |
 |----------------------|--------------------------|
-| ![Cases/Deaths 05/19/2020](ScreenshotMay19.png "Cases/Deaths 05/19/2020")
- | ![Cases/Deaths 04/17/2020](ScreenshotApril17.png "Cases/Deaths 04/17/2020")
- |
+| ![Cases/Deaths 05/19/2020](ScreenshotMay19.png "Cases/Deaths 05/19/2020") | ![Cases/Deaths 04/17/2020](ScreenshotApril17.png "Cases/Deaths 04/17/2020") |
 
 ## Example April 10
 
