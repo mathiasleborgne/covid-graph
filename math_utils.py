@@ -1,4 +1,6 @@
 import numpy as np
+from sklearn.metrics import mean_absolute_error
+
 
 # math utils -----------------------
 
@@ -23,6 +25,8 @@ def smooth_max(country_info, data_name):
     argmax_y = y_smooth.idxmax(axis=1)
     return max_y, argmax_y
 
+def mean_absolute_error_norm(X, Y):
+    return mean_absolute_error(X, Y)/ np.mean(X) * 100
 
 def get_float_index(country_info_ranged):
     return np.linspace(0, 1, len(country_info_ranged.index))

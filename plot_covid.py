@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-from sklearn.metrics import mean_absolute_error
 import json
 import math
 import os
@@ -12,7 +11,8 @@ from pprint import pprint
 
 from fetch_excel import fetch_excel
 from fetch_apis import get_country_by_api, get_all_countries_info_by_api
-from math_utils import smooth_max, get_applied_func, smooth_curve, get_float_index
+from math_utils import smooth_max, get_applied_func, smooth_curve, get_float_index, \
+    mean_absolute_error_norm
 from publish import push_if_outdated, get_today_date_str, get_date_last_update
 
 
@@ -203,6 +203,11 @@ country_min_cases = [
 all_countries = country_min_cases[:max_countries_display]
 print("Countries:", all_countries)
 
+def get_error_with_smooth(country_info, data_name):
+    country_data_smooth = country_info[data_name + "Smooth"].dropna(how="any")
+    len_smooth = len(country_data_smooth)
+    country_data = country_info[data_name].dropna(how="any")[:len_smooth]
+    return mean_absolute_error_norm(country_data_smooth, country_data)
 
 def get_peak_date(country_info, data_name):
     max_country, argmax_country = smooth_max(country_info, data_name)
@@ -252,7 +257,7 @@ def add_linear_regression_log_and_prediction(
     popt, pcov = scipy.optimize.curve_fit(applied_func, X, Y)
     applied_func_params = lambda x: applied_func(x, *popt)
 
-    reg_error_pct = mean_absolute_error(Y, applied_func_params(X))/ np.mean(Y) * 100
+    reg_error_pct = mean_absolute_error_norm(Y, applied_func_params(X))
 
     # predict
     # X_extended = country_data_ranged.index.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()
@@ -366,6 +371,8 @@ def process_plot_country(country, country_info):
     for data_name in data_names:
         print("Analyzing {}".format(data_name))
         country_info[data_name + "Smooth"] = smooth_curve(country_info[data_name])
+        error_with_smooth = get_error_with_smooth(country_info, data_name)
+        print("error_with_smooth:", error_with_smooth)
         peak_date = get_peak_date(country_info, data_name) # needs smooth column addition...
         is_peak = peak_date is not None
         print("    is peak? {} - date max: {}".format(is_peak, peak_date))
