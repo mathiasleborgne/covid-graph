@@ -86,13 +86,13 @@ improved_country_names = {
 data_fetcher_excel = ExcelFetcher(args, args.reload)
 data_fetcher_api = APIFetcher(args)
 if args.excel:
-    data_fetcher = data_fetcher_excel
+    data_fetcher_default = data_fetcher_excel
 else:
-    data_fetcher = data_fetcher_api
+    data_fetcher_default = data_fetcher_api
 
-data_names = data_fetcher.get_data_names()
+data_names = data_fetcher_default.get_data_names()
 
-all_countries = data_fetcher.get_all_countries()
+all_countries = data_fetcher_default.get_all_countries()
 print("Countries:", all_countries)
 
 def get_error_with_smooth(country_info, data_name):
@@ -100,6 +100,36 @@ def get_error_with_smooth(country_info, data_name):
     len_smooth = len(country_data_smooth)
     country_data = country_info[data_name].dropna(how="any")[:len_smooth]
     return mean_absolute_error_norm(country_data_smooth, country_data)
+
+
+def get_country_info_with_error(country_name, data_fetcher):
+    country_info = data_fetcher.get_country_info(country_name)
+    data_name = data_fetcher.get_cases_name()
+    country_info[data_name + "Smooth"] = smooth_curve(country_info[data_name])
+    error = get_error_with_smooth(country_info, data_name)
+    return country_info, error
+
+
+def get_best_source(country_name):
+    # todo: the errors are due to a country name not present in the lists from different sources
+    try:
+        country_info_excel, excel_error = \
+            get_country_info_with_error(country_name, data_fetcher_excel)
+    except (KeyError, TypeError) as e:
+        print("Chose API (Excel doesn't work")
+        return data_fetcher_api
+    try:
+        country_info_api, api_error = \
+            get_country_info_with_error(country_name, data_fetcher_api)
+    except (KeyError, TypeError) as e:
+        print("Chose Excel (API doesn't work")
+        return data_fetcher_excel
+    if api_error < excel_error:
+        print("Chose API")
+        return data_fetcher_api
+    else:
+        print("Chose Excel")
+        return data_fetcher_excel
 
 def get_peak_date(country_info, data_name):
     max_country, argmax_country = smooth_max(country_info, data_name)
@@ -223,7 +253,8 @@ def regress_predict_data(data_name, country_info, is_peak):
     }
 
 # Plot ----------------------------------
-def plot_country_log(country, all_results, country_info, log_scale):
+def plot_country_log(country, all_results, country_info, data_fetcher, log_scale):
+    data_names = data_fetcher.get_data_names()
     prediction_columns_names = [
         get_column_name_func(data_name, all_results[data_name]["prediction_type"], False, True)
         for data_name in data_names
@@ -260,7 +291,7 @@ def improve_country_name(country_name):
 def process_plot_country(country, country_info, data_fetcher):
     country_all_results = {}
 
-    for data_name in data_names:
+    for data_name in data_fetcher.get_data_names():
         print("Analyzing {}".format(data_name))
         country_info[data_name + "Smooth"] = smooth_curve(country_info[data_name])
         error_with_smooth = get_error_with_smooth(country_info, data_name)
@@ -276,8 +307,8 @@ def process_plot_country(country, country_info, data_fetcher):
         country_all_results[data_name] = country_results_data
         country_info = updated_country_info
 
-    image_name_log = plot_country_log(country, country_all_results, country_info, True)
-    image_name_normal = plot_country_log(country, country_all_results, country_info, False)
+    image_name_log = plot_country_log(country, country_all_results, country_info, data_fetcher, True)
+    image_name_normal = plot_country_log(country, country_all_results, country_info, data_fetcher, False)
     index_str_list = [str(timestamp) for timestamp in country_info.index.tolist()]
 
     def export_data(data_name):
@@ -317,13 +348,16 @@ images_info = []
 countries = get_countries()
 for index, country_name in enumerate(countries):
     try:
-        country_info = data_fetcher.get_country_info(country_name)
+        print("Processing {} - ({}/{})"
+              .format(country_name, index + 1, len(countries)))
+        data_fetcher_best = get_best_source(country_name)
+        country_info = data_fetcher_best.get_country_info(country_name)
         if country_info is None:
             print("No case found for {}".format(country_name))
             continue
-        print("Processing {} - {} cases ({}/{})"
-              .format(country_name, data_fetcher.countries_max_cases_dict[country_name], index + 1, len(countries)))
-        image_info = process_plot_country(country_name, country_info, data_fetcher)
+        print("    {} cases"
+              .format(data_fetcher_best.countries_max_cases_dict[country_name]))
+        image_info = process_plot_country(country_name, country_info, data_fetcher_best)
         images_info.append(image_info)
     except (ValueError, IndexError) as error:
         print("No case found for {} (error: {})".format(country_name, error))
