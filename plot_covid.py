@@ -9,11 +9,12 @@ import pandas as pd
 import argparse
 from pprint import pprint
 
-from fetch_excel import fetch_excel
-from fetch_apis import get_country_by_api, get_all_countries_info_by_api
+from fetch_excel import ExcelFetcher
+from fetch_apis import APIFetcher
 from math_utils import smooth_max, get_applied_func, smooth_curve, get_float_index, \
     mean_absolute_error_norm
 from publish import push_if_outdated, get_today_date_str, get_date_last_update
+from constants import *
 
 
 """ This script:
@@ -43,14 +44,6 @@ from publish import push_if_outdated, get_today_date_str, get_date_last_update
             - fully split maths/excel fetch
             - objects
 """
-# constants --------------------------------------
-min_new_cases = 100
-min_total_cases = 1000
-min_cases_start_date = 30
-min_days_post_peak = 8
-min_decrease_post_peak = 10.
-number_days_future_default = 10
-max_countries_display = 50  # max number of countries to display
 
 # parser -------------------------------------------
 parser = argparse.ArgumentParser()
@@ -70,18 +63,7 @@ parser.add_argument("--days_predict", help="Number of days to predict in the fut
 args = parser.parse_args()
 
 
-def get_cases_name():
-    """ cases columns have different names based on sources (excel/api)
-    """
-    return "new_confirmed" if not args.excel else "cases"
-
-def get_deaths_name():
-    """ deaths columns have different names based on sources (excel/api)
-    """
-    return "new_deaths" if not args.excel else "deaths"
-
 former_date = get_date_last_update()
-data_names = [get_cases_name(), get_deaths_name()]
 
 favorite_countries = [
     "France",
@@ -101,106 +83,16 @@ improved_country_names = {
     "S. Korea": "South Korea",
 }
 
-# https://www.data.gouv.fr/fr/datasets/cas-confirmes-dinfection-au-covid-19-par-region/
-url_input = "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide"
-file_name_output = "COVID-19-geographic-disbtribution-worldwide.xlsx"
-
-if args.reload:
-    fetch_excel(url_input, file_name_output)
-try:
-    world_info = pd.read_excel(file_name_output)
-except FileNotFoundError as e:
-    fetch_excel(url_input, file_name_output)
-    world_info = pd.read_excel(file_name_output)
-
-# Excel fields are:
-#    dateRep
-#    day
-#    month
-#    year
-#    cases
-#    deaths
-#    countriesAndTerritories
-#    geoId
-#    countryterritoryCode
-#    popData2018
-
-# todo: put this part in excel fetch script
-world_info["date"] = world_info["dateRep"]
-world_info = world_info.set_index(["date"])
-world_info.sort_values(by="date")
-all_countries_world = set(world_info.countriesAndTerritories)
-
-
-def slice_from_start_date(country_info):
-    if args.start_date is None:
-        start_date = pd.Timestamp(
-            country_info[country_info[get_cases_name()] > min_cases_start_date]
-            .index[-1])
-    else:
-        start_date = args.start_date
-    return country_info.loc[:start_date]
-
-def add_future_index(country_info, number_days_future):
-    dates_extended = pd.DatetimeIndex(pd.date_range(country_info.index[0], periods=number_days_future))
-    dates_original = pd.DatetimeIndex(country_info.index)
-    ix_dates_extended = dates_original.union(dates_extended)
-    return country_info.reindex(ix_dates_extended)
-
-def get_country_info(country, force_excel=False):
-    """ returns None if error/no info found
-    """
-    if args.excel or force_excel:
-        country_info = world_info[world_info["countriesAndTerritories"].isin([country])]
-    else:
-        country_info = get_country_by_api(country_code_dict[country])
-    if country_info is None:
-        return None
-    country_info = country_info.loc[~country_info.index.duplicated(keep='first')]
-        # remove duplicated indices in index
-        # https://stackoverflow.com/questions/13035764/remove-rows-with-duplicate-indices-pandas-dataframe-and-timeseries
-    try:
-        country_info = slice_from_start_date(country_info)
-    except IndexError as e:
-        print("No data found")
-        return None
-    country_info = add_future_index(country_info, args.days_predict)
-    return country_info
-
-def get_max_cases_country(country_name):
-    country_info = get_country_info(country_name, force_excel=True)
-    if country_info is None:
-        return None
-    else:
-        return country_info["cases"].max()
-
-
+data_fetcher_excel = ExcelFetcher(args, args.reload)
+data_fetcher_api = APIFetcher(args)
 if args.excel:
-    countries_max_cases_dict = {
-        country_name: get_max_cases_country(country_name)
-        for country_name in all_countries_world
-        if get_max_cases_country(country_name) is not None
-    }
-    # countries_population_dict = dict(zip(world_info.countriesAndTerritories, world_info.popData2018))
+    data_fetcher = data_fetcher_excel
 else:
-    all_countries_reduced_data = get_all_countries_info_by_api()
-    country_code_dict = {
-        country_reduced_data["name"]: country_reduced_data["code"]
-        for country_reduced_data in all_countries_reduced_data
-    }
-    countries_max_cases_dict = { # todo: also check daily cases? careful with China...
-        country_reduced_data["name"]: country_reduced_data["latest_data"]["confirmed"]
-        for country_reduced_data in all_countries_reduced_data
-    }
+    data_fetcher = data_fetcher_api
 
-countries_sorted = sorted(countries_max_cases_dict.items(),
-                          key=lambda item: item[1], reverse=True)
-country_min_cases = [
-    country_name
-    for country_name, max_cases in countries_sorted
-    if max_cases > (min_new_cases if args.excel else min_total_cases)
-]
-all_countries = country_min_cases[:max_countries_display]
+data_names = data_fetcher.get_data_names()
+
+all_countries = data_fetcher.get_all_countries()
 print("Countries:", all_countries)
 
 def get_error_with_smooth(country_info, data_name):
@@ -365,7 +257,7 @@ def improve_country_name(country_name):
     except KeyError as e:
         return country_name
 
-def process_plot_country(country, country_info):
+def process_plot_country(country, country_info, data_fetcher):
     country_all_results = {}
 
     for data_name in data_names:
@@ -401,10 +293,10 @@ def process_plot_country(country, country_info):
         "image_name_log": image_name_log,
         "image_name_normal": image_name_normal,
         "dates": index_str_list,
-        "new_confirmed": export_data(get_cases_name()),
-        "new_deaths": export_data(get_deaths_name()),
-        "prediction_confirmed": export_data_prediction(get_cases_name()),
-        "prediction_deaths": export_data_prediction(get_deaths_name()),
+        "new_confirmed": export_data(data_fetcher.get_cases_name()),
+        "new_deaths": export_data(data_fetcher.get_deaths_name()),
+        "prediction_confirmed": export_data_prediction(data_fetcher.get_cases_name()),
+        "prediction_deaths": export_data_prediction(data_fetcher.get_deaths_name()),
     }
     return country_all_results
 
@@ -412,7 +304,7 @@ def save_json(file_name, content):
     with open(file_name, "w") as outfile:
         json.dump(content, outfile)
 
-def get_countries(world_info):
+def get_countries():
     if args.favorite:
         return favorite_countries
     elif args.all:
@@ -422,16 +314,16 @@ def get_countries(world_info):
         return [args.country]
 
 images_info = []
-countries = get_countries(world_info)
+countries = get_countries()
 for index, country_name in enumerate(countries):
     try:
-        country_info = get_country_info(country_name)
+        country_info = data_fetcher.get_country_info(country_name)
         if country_info is None:
             print("No case found for {}".format(country_name))
             continue
         print("Processing {} - {} cases ({}/{})"
-              .format(country_name, countries_max_cases_dict[country_name], index + 1, len(countries)))
-        image_info = process_plot_country(country_name, country_info)
+              .format(country_name, data_fetcher.countries_max_cases_dict[country_name], index + 1, len(countries)))
+        image_info = process_plot_country(country_name, country_info, data_fetcher)
         images_info.append(image_info)
     except (ValueError, IndexError) as error:
         print("No case found for {} (error: {})".format(country_name, error))
