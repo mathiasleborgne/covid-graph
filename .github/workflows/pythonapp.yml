@@ -33,5 +33,5 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Publish from automatic commit
       run: |
-        python plot_covid.py --all --publish_push
+        python plot_covid.py --all --reload --publish_push
 
