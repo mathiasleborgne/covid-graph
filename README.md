@@ -2,10 +2,6 @@
 
 Code for [covid-graph website](https://mathiasleborgne.github.io/covid-graph/): graphs and predictions for daily coronavirus cases and deaths.
 
-Sources:
-* [ECDC](https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide)
-* [about-corona API](https://about-corona.net/)
-
 ## Misc Examples
 
 | Example May 19 (USA) | Example April 17 (Italy) |
@@ -15,6 +11,14 @@ Sources:
 ## Example April 10
 
 ![Cases/Deaths 04/10/2020](ScreenshotApril10.png "Cases/Deaths 04/10/2020")
+
+## Sources
+
+Sources:
+* [ECDC](https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide)
+* [about-corona API](https://about-corona.net/)
+
+The "smoother" source is chosen (i.e. with smallest error compared to the curved smoothened with a 7-days window).
 
 ## Data processing
 
