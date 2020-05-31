@@ -32,15 +32,15 @@
               (last update: {{ site.data.global_info.date_last_update }}), and tries to predict them with an algorithm.
             </p>
             <p class="mb-2">
-              Curves are displayed by default in a logarithmic manner,
+              The curves are displayed by default in a logarithmic manner,
               which means that each additional unit on the y-axis makes the number 10 times bigger.
-              Curves are compared to:
+              Their trends are compared to:
               <ul>
                 <li> an increasing exponential curve (when it doesn't look flat yet, see explanation <a href="https://youtu.be/Kas0tIxDvrg">here</a>),</li>
                 <li> or an increasing logistic curve (when it starts to flatten)</li>
                 <li> or a decreasing logistic, exponential or linear curve (when the peak seems past). </li>
               </ul>
-              The model with smallest error is chosen.
+              The model with the smallest error is chosen.
               Prediction is thus made, with an error rate (hoping that the numbers are overrated...).
               Only countries with more than {{ site.data.global_info.min_total_cases }} cases are shown.
               Please note that the predictions are made by an algorithm, no manual corrections are performed, and the algorithm can make mistakes for some cases.
