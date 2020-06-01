@@ -28,8 +28,8 @@
         <div class="card-body">
           <blockquote class="blockquote">
             <p class="mb-0">
-              This website shows the number of cases and deaths of Covid-19 by country
-              (last update: {{ site.data.global_info.date_last_update }}), and tries to predict them with an algorithm.
+              This website shows the number of daily new cases and deaths of Covid-19 by country, 
+              and tries to predict them with an algorithm (last update: {{ site.data.global_info.date_last_update }}).
             </p>
             <p class="mb-2">
               The curves are displayed by default in a logarithmic manner,
@@ -38,12 +38,12 @@
               <ul>
                 <li> an increasing exponential curve (when it doesn't look flat yet, see explanation <a href="https://youtu.be/Kas0tIxDvrg">here</a>),</li>
                 <li> or an increasing logistic curve (when it starts to flatten)</li>
-                <li> or a decreasing logistic, exponential or linear curve (when the peak seems past). </li>
+                <li> or a decreasing logistic, exponential or linear curve (when the peak seems behind). </li>
               </ul>
               The model with the smallest error is chosen.
-              Prediction is thus made, with an error rate (hoping that the numbers are overrated...).
+              Prediction is thus made (hoping that the numbers are overrated...), and the prediction error is indicated.
               Only countries with more than {{ site.data.global_info.min_total_cases }} cases are shown.
-              Please note that the predictions are made by an algorithm, no manual corrections are performed, and the algorithm can make mistakes for some cases.
+              Please note that the predictions are made by an algorithm: they are only to be considered as a trend, and the algorithm can be mistaken.
             </p>
             <footer class="blockquote-footer">
               Data source:
