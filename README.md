@@ -20,7 +20,7 @@ Sources:
 
 The "smoother" source is chosen (i.e. with smallest error compared to the curved smoothened with a 7-days window).
 
-## Data processing
+## Predictions
 
 The curves for daily new cases and deaths are fit to a list of models, and the best model is used, amongst:
 
