@@ -3,7 +3,7 @@
 Code for [covid-graph website](https://mathiasleborgne.github.io/covid-graph/): 
 graphs and predictions for coronavirus daily cases and deaths.
 
-## Misc Examples
+## Miscellaneous Examples
 
 | Example May 19 (USA) | Example April 17 (Italy) |
 |----------------------|--------------------------|
