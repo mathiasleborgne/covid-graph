@@ -111,6 +111,8 @@ def get_country_info_with_error(country_name, data_fetcher):
 
 
 def get_best_source(country_name):
+    """ Chose best data fetcher based on error compared to smoothened curve
+    """
     # todo: the errors are due to a country name not present in the lists from different sources
     try:
         country_info_excel, excel_error = \
