@@ -1,6 +1,9 @@
 import pandas as pd
 from constants import *
 
+""" Abstract class and utilities to fetch data from Excel, Jason APIs.
+"""
+
 def add_future_index(country_info, number_days_future):
     dates_extended = pd.DatetimeIndex(pd.date_range(country_info.index[0], periods=number_days_future))
     dates_original = pd.DatetimeIndex(country_info.index)
