@@ -1,3 +1,10 @@
+""" Main script: 
+    - choose best data fetcher,  
+    - fit data curves, 
+    - make predictions, 
+    - put all information for website in JSON outputs
+"""
+
 import matplotlib.pyplot as plt
 import json
 import math
