@@ -1,4 +1,5 @@
-# constants --------------------------------------
+""" Constants for plot_covid script, including parser default values, settings, etc
+"""
 min_new_cases = 100
 min_total_cases = 1000
 min_cases_start_date = 30
