@@ -1,3 +1,7 @@
+""" Math related utilities, including math functions for curve fitting 
+"""
+
+
 import numpy as np
 from sklearn.metrics import mean_absolute_error
 
