@@ -1,3 +1,6 @@
+""" fetch data from an excel file available on a Web page 
+"""
+
 import requests
 import pandas as pd
 from tqdm import tqdm
