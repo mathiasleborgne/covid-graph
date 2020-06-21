@@ -103,6 +103,8 @@ all_countries = data_fetcher_default.get_all_countries()
 print("Countries:", all_countries)
 
 def get_error_with_smooth(country_info, data_name):
+    """ mean absolute error between raw and smoothened curves
+    """
     country_data_smooth = country_info[data_name + "Smooth"].dropna(how="any")
     len_smooth = len(country_data_smooth)
     country_data = country_info[data_name].dropna(how="any")[:len_smooth]
