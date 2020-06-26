@@ -143,6 +143,8 @@ def get_best_source(country_name):
         return data_fetcher_excel
 
 def get_peak_date(country_info, data_name):
+    """ return peak date as pandas timestamp if detected, else None
+    """
     max_country, argmax_country = smooth_max(country_info, data_name)
     country_data_smooth = country_info[data_name + "Smooth"].dropna(how="any")
     today = country_info[data_name].dropna(how="any").index[-1]
