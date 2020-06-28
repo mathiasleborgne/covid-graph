@@ -163,6 +163,8 @@ def get_peak_date(country_info, data_name):
         return None
 
 def get_column_name_func(column_name, prediction_type, is_inverted, is_prediction):
+    """ get the name of the column in pandas frame for data, prediction, data with function applied (inverted)
+    """
     # todo: inverted and prediction: compatible?
     column_name_func = column_name + prediction_type
     if is_prediction:
