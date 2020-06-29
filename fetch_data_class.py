@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from constants import *
 
 """ Abstract class and utilities to fetch data from Excel, Jason APIs.
@@ -56,8 +57,12 @@ class DataFetcher(object):
 
     def slice_from_start_date(self, country_info):
         if self.start_date is None:
+            cases_col = self.get_cases_name()
             start_date = pd.Timestamp(
-                country_info[country_info[self.get_cases_name()] > min_cases_start_date]
+                country_info.loc[
+                    (country_info[cases_col] > min_cases_start_date)
+                    & (country_info[cases_col] != np.nan)
+                ]
                 .index[-1])
         else:
             start_date = self.start_date
