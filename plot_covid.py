@@ -230,6 +230,8 @@ def regress_predict(prediction_type, country_info, data_name):
     return updated_country_info, results
 
 def get_latest_value(pd_series):
+    """ Get the latest values of a pandas series, Nan excluded
+    """
     return pd_series.dropna(how="any")[-1]
 
 def regress_predict_data(data_name, country_info, is_peak):
