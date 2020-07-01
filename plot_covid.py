@@ -112,6 +112,8 @@ def get_error_with_smooth(country_info, data_name):
 
 
 def get_country_info_with_error(country_name, data_fetcher):
+    """ get dataframe for the country, and the error compared to smooth curve
+    """
     country_info = data_fetcher.get_country_info(country_name)
     data_name = data_fetcher.get_cases_name()
     country_info[data_name + "Smooth"] = smooth_curve(country_info[data_name])
