@@ -237,6 +237,8 @@ def get_latest_value(pd_series):
     return pd_series.dropna(how="any")[-1]
 
 def regress_predict_data(data_name, country_info, is_peak):
+    """ get country info with predictions added, plus some country-level info for JSON export
+    """
     prediction_types = ["Logistics", "Exponential"]
     if is_peak: # forbid logistics+exp if peak is too close
         prediction_types.append("Logistics + Exponential")
