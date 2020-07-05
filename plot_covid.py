@@ -275,6 +275,9 @@ def regress_predict_data(data_name, country_info, is_peak):
 
 # Plot ----------------------------------
 def plot_country_log(country, all_results, country_info, data_fetcher, log_scale):
+    """ Plot country data and predictions, with log scale (or not, based on log_scale argument).
+        To be used locally, for the website we use JSON export + JS lib
+    """
     data_names = data_fetcher.get_data_names()
     prediction_columns_names = [
         get_column_name_func(data_name, all_results[data_name]["prediction_type"], False, True)
