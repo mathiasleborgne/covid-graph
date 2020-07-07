@@ -307,6 +307,8 @@ def plot_country_log(country, all_results, country_info, data_fetcher, log_scale
     return image_name
 
 def improve_country_name(country_name):
+    """ Get a better country name if possible, based on hardcoded dict, else just return the country name
+    """
     try:
         return improved_country_names[country_name]
     except KeyError as e:
