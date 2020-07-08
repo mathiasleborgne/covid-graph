@@ -362,6 +362,8 @@ def save_json(file_name, content):
         json.dump(content, outfile)
 
 def get_countries():
+    """ Get the list of countries to process based on args
+    """
     if args.favorite:
         return favorite_countries
     elif args.all:
