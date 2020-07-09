@@ -358,6 +358,8 @@ def process_plot_country(country, country_info, data_fetcher):
     return country_all_results
 
 def save_json(file_name, content):
+    """ Save as JSON file
+    """
     with open(file_name, "w") as outfile:
         json.dump(content, outfile)
 
