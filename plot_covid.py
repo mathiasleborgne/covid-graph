@@ -315,6 +315,9 @@ def improve_country_name(country_name):
         return country_name
 
 def process_plot_country(country, country_info, data_fetcher):
+    """ Get all data (including predictions) for a country
+        Return a dict with the results, for later JSON conversion
+    """
     country_all_results = {}
 
     for data_name in data_fetcher.get_data_names():
