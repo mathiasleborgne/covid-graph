@@ -223,8 +223,10 @@ def add_linear_regression_log_and_prediction(
     return country_info, results
 
 
-
 def regress_predict(prediction_type, country_info, data_name):
+    """ Fit curve, predict and give results for a type of prediction (model) 
+        Add results to data frame and give results 
+    """
     applied_func = get_applied_func(prediction_type, country_info, data_name)
     updated_country_info, results = \
         add_linear_regression_log_and_prediction(
