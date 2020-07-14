@@ -24,7 +24,7 @@ class DataFetcher(object):
         self.countries_max_cases_dict = self.get_countries_max_cases_dict()
 
     def make_global_data(self):
-        """
+        """ Make and save the class variables with all data
         """
         raise NotImplementedError()
 
