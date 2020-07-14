@@ -19,9 +19,11 @@ from pprint import pprint
 from fetch_excel import ExcelFetcher
 from fetch_apis import APIFetcher
 from math_utils import smooth_max, get_applied_func, smooth_curve, get_float_index, \
-    mean_absolute_error_norm, series_to_float
+    mean_absolute_error_norm, mean_absolute_log_error_norm, series_to_float, \
+    quick_prediction_plot
 from publish import push_if_outdated, get_today_date_str, get_date_last_update
 from constants import *
+from experiment_pwlf import predict_pwlf
 
 
 """ This script:
@@ -185,34 +187,43 @@ def add_linear_regression_log_and_prediction(
     # country_info_ranged = country_info.loc[start_date:end_date]
     # country_info_filtered = country_info.loc[start_date:end_date].dropna(how="any")
     country_data = country_info[data_name]
-    country_data_ranged = country_data # todo: useful to add range?
     country_data_filtered = country_data.dropna(how="any")
     X = series_to_float(country_data_filtered.index)
-    X_extended = get_float_index(country_data_ranged)
+    X_extended = get_float_index(country_data)
         # todo back to timestamps?
     X = X_extended[:len(country_data_filtered.index)]
     Y = series_to_float(country_data_filtered)
+    error_penalty = 0.
 
-    popt, pcov = scipy.optimize.curve_fit(applied_func, X, Y)
-    applied_func_params = lambda x: applied_func(x, *popt)
+    if prediction_type == "LogPiecewiseLinearFit3":
+        Y_pred, func_applied_on_index, is_post_peak_slopes = predict_pwlf(country_data_filtered, X, X_extended, 3)
+        daily_growth_pct= 0. # todo
+        # print("is_post_peak_slopes", is_post_peak_slopes)
+        if not is_post_peak_slopes:
+            # bigger error if slopes don't correspond to growth + decrease + growth/decrease
+            error_penalty = 20.
+    else:
+        popt, pcov = scipy.optimize.curve_fit(applied_func, X, Y)
+        applied_func_params = lambda x: applied_func(x, *popt)
+        func_applied_on_index = applied_func_params(X)
 
-    reg_error_pct = mean_absolute_error_norm(Y, applied_func_params(X))
+        # predict
+        # X_extended = country_data.index.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()
+        Y_pred = applied_func_params(X_extended)
 
-    # predict
-    # X_extended = country_data_ranged.index.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()
-    Y_pred = applied_func_params(X_extended)
-
-    # compute daily multiplicative factor
-    # eg for Exponential:
-    # ln(Y) = a*t+b --> Y(t) = B*exp(a*t) --> Y(t+1) = B*exp(a)*exp(a*t) = exp(a)*Y(t)
-    daily_growth_pct = (applied_func_params(X[-1]) - applied_func_params(X[-2]))/applied_func_params(X[-1]) * 100
-    # print("{} grow of {} pct each day".format(data_name, daily_growth_pct))
+        # compute daily multiplicative factor
+        # eg for Exponential:
+        # ln(Y) = a*t+b --> Y(t) = B*exp(a*t) --> Y(t+1) = B*exp(a)*exp(a*t) = exp(a)*Y(t)
+        daily_growth_pct = (applied_func_params(X[-1]) - applied_func_params(X[-2]))/applied_func_params(X[-1]) * 100
+        # print("{} grow of {} pct each day".format(data_name, daily_growth_pct))
+    # quick_prediction_plot(country_data_filtered, X, X_extended, Y_pred)
+    reg_error_pct = mean_absolute_log_error_norm(Y, func_applied_on_index) + error_penalty
 
     # add to dataframe
-    prediction = pd.Series(np.round(Y_pred).ravel(),
+    prediction_series = pd.Series(np.round(Y_pred).ravel(),
                            name=get_column_name_func(data_name, prediction_type, False, True),
-                           index=country_data_ranged.index)
-    country_info = pd.concat([country_info, prediction],
+                           index=country_data.index)
+    country_info = pd.concat([country_info, prediction_series],
                               axis=1, sort=False)
     results = {
         "prediction_type": prediction_type,
@@ -241,7 +252,8 @@ def get_latest_value(pd_series):
 def regress_predict_data(data_name, country_info, is_peak):
     """ get country info with predictions added, plus some country-level info for JSON export
     """
-    prediction_types = ["Logistics", "Exponential"]
+    prediction_types = ["Logistics", "Exponential", "LogPiecewiseLinearFit3"]
+    # LogPiecewiseLinearFit3 is OK without peak because of the USA example with 1st low peak, then higher rebound
     if is_peak: # forbid logistics+exp if peak is too close
         prediction_types.append("Logistics + Exponential")
         prediction_types.append("Logistics(Incr) + Logistics(Decr)")

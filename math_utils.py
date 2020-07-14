@@ -1,9 +1,9 @@
-""" Math related utilities, including math functions for curve fitting 
+""" Math related utilities, including math functions for curve fitting
 """
-
 
 import numpy as np
 from sklearn.metrics import mean_absolute_error
+import matplotlib.pyplot as plt
 
 
 # math utils -----------------------
@@ -14,9 +14,9 @@ def shift(xs, n):
     else:
         return np.r_[xs[-n:], np.full(-n, np.nan)]
 
-def smooth_curve(y):
-    n_pts_box = 7 # width of the window
-        # todo: put it in constants
+def smooth_curve(y, n_pts_box=7):
+    # n_pts_box: width of the window
+    # todo: put it in constants
     box = np.ones(n_pts_box)/n_pts_box
 
     y_smooth = np.convolve(y, box, mode='same')
@@ -32,6 +32,12 @@ def smooth_max(country_info, data_name):
 
 def mean_absolute_error_norm(X, Y):
     return mean_absolute_error(X, Y)/ np.mean(X) * 100
+
+def log_no_nan(X):
+    return np.log(np.maximum(X, 0.*X +1)) #todo: ones?
+
+def mean_absolute_log_error_norm(X, Y):
+    return mean_absolute_error_norm(log_no_nan(X), log_no_nan(Y))
 
 def get_float_index(country_info_ranged):
     return np.linspace(0, 1, len(country_info_ranged.index))
@@ -101,3 +107,14 @@ def get_applied_func(prediction_type, country_info, data_name):
 
 def series_to_float(data_series):
     return data_series.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()
+
+
+def quick_prediction_plot(country_data, index_float, index_float_extended, prediction):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plt.plot(index_float, country_data)
+    # plt.plot(x_hat, prediction, '-')
+    plt.plot(index_float_extended, prediction, '-')
+    ax.set_yscale("log")
+    plt.show()
+
