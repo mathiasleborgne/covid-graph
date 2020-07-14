@@ -1,7 +1,7 @@
-""" Main script: 
-    - choose best data fetcher,  
-    - fit data curves, 
-    - make predictions, 
+""" Main script:
+    - choose best data fetcher,
+    - fit data curves,
+    - make predictions,
     - put all information for website in JSON outputs
 """
 
@@ -19,7 +19,7 @@ from pprint import pprint
 from fetch_excel import ExcelFetcher
 from fetch_apis import APIFetcher
 from math_utils import smooth_max, get_applied_func, smooth_curve, get_float_index, \
-    mean_absolute_error_norm
+    mean_absolute_error_norm, series_to_float
 from publish import push_if_outdated, get_today_date_str, get_date_last_update
 from constants import *
 
@@ -187,11 +187,11 @@ def add_linear_regression_log_and_prediction(
     country_data = country_info[data_name]
     country_data_ranged = country_data # todo: useful to add range?
     country_data_filtered = country_data.dropna(how="any")
-    X = country_data_filtered.index.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()
+    X = series_to_float(country_data_filtered.index)
     X_extended = get_float_index(country_data_ranged)
         # todo back to timestamps?
     X = X_extended[:len(country_data_filtered.index)]
-    Y = country_data_filtered.to_numpy().reshape(-1, 1).ravel()
+    Y = series_to_float(country_data_filtered)
 
     popt, pcov = scipy.optimize.curve_fit(applied_func, X, Y)
     applied_func_params = lambda x: applied_func(x, *popt)
@@ -224,8 +224,8 @@ def add_linear_regression_log_and_prediction(
 
 
 def regress_predict(prediction_type, country_info, data_name):
-    """ Fit curve, predict and give results for a type of prediction (model) 
-        Add results to data frame and give results 
+    """ Fit curve, predict and give results for a type of prediction (model)
+        Add results to data frame and give results
     """
     applied_func = get_applied_func(prediction_type, country_info, data_name)
     updated_country_info, results = \

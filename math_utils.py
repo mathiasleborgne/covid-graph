@@ -98,3 +98,6 @@ def get_applied_func(prediction_type, country_info, data_name):
             logistics_linear_full(x, a_log1, b_log1, a_lin, l_max, argmax_float)
     else:
         return exponential_full
+
+def series_to_float(data_series):
+    return data_series.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()

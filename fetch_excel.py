@@ -2,11 +2,12 @@
 """
 
 import requests
+from pprint import pprint
 import pandas as pd
 from tqdm import tqdm
 import os
 
-from fetch_data_class import DataFetcher
+from fetch_data_class import DataFetcher, FakeArgs
 from constants import *
 
 folder_xlsx = "."
@@ -41,6 +42,9 @@ def fetch_excel(url_input, file_name_output):
 
 class ExcelFetcher(DataFetcher):
     """docstring for ExcelFetcher"""
+
+    area_name_example = "France" # todo: check
+
     def __init__(self, args, reload_data):
         super(ExcelFetcher, self).__init__(args)
 
@@ -108,3 +112,7 @@ class ExcelFetcher(DataFetcher):
             self.world_info["countriesAndTerritories"].isin([country_name])]
 
 
+if __name__ == '__main__':
+    fake_args = FakeArgs()
+    data_fetcher = ExcelFetcher(fake_args, True)
+    pprint(data_fetcher.get_country_info(ExcelFetcher.area_name_example))

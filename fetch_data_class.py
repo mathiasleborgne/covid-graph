@@ -87,3 +87,11 @@ class DataFetcher(object):
         return country_info
 
 
+class FakeArgs(object):
+
+    reload = False
+    days_predict = 10
+
+    def __init__(self):
+        super(FakeArgs, self).__init__()
+        self.start_date = None
