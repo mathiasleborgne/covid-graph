@@ -3,6 +3,19 @@
 Code for [covid-graph website](https://mathiasleborgne.github.io/covid-graph/): 
 graphs and predictions for coronavirus daily cases and deaths.
 
+## Stack
+
+* Python scripts:
+    + requests: fetch data (Excel/JSON)
+    + pandas: containers for data
+    + numpy: curve_fit and other utilities
+    + gitpython: automatic commits for update
+* Web:
+    + Jekyll: static web pages generation
+    + Plotly: javascript tool for data charts
+    + bootstrap: quick and nice rendering
+    + GitHub Actions: run the scripts and save data changes in a commit
+
 ## Miscellaneous Examples
 
 | Example May 19 (USA) | Example April 17 (Italy) |
@@ -65,14 +78,3 @@ To update, push any commit on this server. An additional automatic commit will b
       --days_predict DAYS_PREDICT
                             Number of days to predict in the future
 
-## Stack
-
-* Python scripts:
-    + requests: fetch data (Excel/JSON)
-    + pandas: containers for data
-    + numpy: curve_fit and other utilities
-    + gitpython: automatic commits for update
-* Web:
-    + Jekyll: static web pages generation
-    + Plotly: javascript tool for data charts
-    + bootstrap: quick and nice rendering
