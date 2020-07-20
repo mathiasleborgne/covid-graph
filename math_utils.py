@@ -15,7 +15,8 @@ def shift(xs, n):
         return np.r_[xs[-n:], np.full(-n, np.nan)]
 
 def smooth_curve(y):
-    n_pts_box = 6
+    n_pts_box = 7 # width of the window
+        # todo: put it in constants
     box = np.ones(n_pts_box)/n_pts_box
 
     y_smooth = np.convolve(y, box, mode='same')
