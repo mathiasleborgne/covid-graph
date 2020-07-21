@@ -28,12 +28,16 @@
         <div class="card-body">
           <blockquote class="blockquote">
             <p class="mb-0">
-              This website shows the number of daily new cases and deaths of Covid-19 by country, 
+              This website shows the number of daily new cases and deaths of Covid-19 by country,
               and tries to predict them with an algorithm (last update: {{ site.data.global_info.date_last_update }}).
             </p>
             <p class="mb-2">
-              The curves are displayed by default in a logarithmic manner,
-              which means that each additional unit on the y-axis makes the number 10 times bigger.
+              The curves are displayed:
+              <ul>
+                <li>in a logarithmic manner, which means that each additional unit on the y-axis makes the number 10 times bigger.
+                </li>
+                <li>with an average on the 7 last days (to compensate missing figures from the week-end for instance)</li>
+              </ul>
               Their trends are compared to:
               <ul>
                 <li> an increasing exponential curve (when it doesn't look flat yet, see explanation <a href="https://youtu.be/Kas0tIxDvrg">here</a>),</li>
