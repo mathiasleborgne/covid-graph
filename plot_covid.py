@@ -354,12 +354,16 @@ def process_plot_country(country, country_info, data_fetcher):
     image_name_normal = plot_country_log(country, country_all_results, country_info, data_fetcher, False)
     index_str_list = [str(timestamp) for timestamp in country_info.index.tolist()]
 
-    def export_data(data_name):
-        return (smooth_curve(country_info[data_name].values).tolist())
+    def export_data(data_name, smoothen=True):
+        if smoothen:
+            return smooth_curve(country_info[data_name].values).tolist()
+        else:
+            return country_info[data_name].values.tolist()
+
     def export_data_prediction(data_name):
         column_name = get_column_name_func(
             data_name, country_all_results[data_name]["prediction_type"], False, True)
-        return export_data(column_name)
+        return export_data(column_name, False)
 
     country_all_results = {
         "country_data": country_all_results,
