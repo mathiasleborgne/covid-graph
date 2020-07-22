@@ -177,21 +177,7 @@ def get_column_name_func(column_name, prediction_type, is_inverted, is_predictio
     return column_name_func
 
 # regression -----------------------------
-def add_linear_regression_log_and_prediction(
-    country_info, data_name, applied_func, prediction_type):
-    """ use scipy's curve_fit to fit any function
-    """
-    column_applied_func = get_column_name_func(data_name, prediction_type, True, False)
-    # start_date, end_date = date_range
-    # country_info_ranged = country_info.loc[start_date:end_date]
-    # country_info_filtered = country_info.loc[start_date:end_date].dropna(how="any")
-    country_data = country_info[data_name]
-    country_data_filtered = country_data.dropna(how="any")
-    X = series_to_float(country_data_filtered.index)
-    X_extended = get_float_index(country_data)
-        # todo back to timestamps?
-    X = X_extended[:len(country_data_filtered.index)]
-    Y = series_to_float(country_data_filtered)
+def make_prediction_error_growth(X, X_extended, Y, prediction_type, applied_func):
     error_penalty = 0.
 
     if prediction_type == "LogPiecewiseLinearFit3":
@@ -214,10 +200,28 @@ def add_linear_regression_log_and_prediction(
         # eg for Exponential:
         # ln(Y) = a*t+b --> Y(t) = B*exp(a*t) --> Y(t+1) = B*exp(a)*exp(a*t) = exp(a)*Y(t)
         daily_growth_pct = (applied_func_params(X[-1]) - applied_func_params(X[-2]))/applied_func_params(X[-1]) * 100
-        # print("{} grow of {} pct each day".format(data_name, daily_growth_pct))
+    # print("{} grow of {} pct each day".format(data_name, daily_growth_pct))
     # quick_prediction_plot(country_data_filtered, X, X_extended, Y_pred)
     reg_error_pct = mean_absolute_log_error_norm(Y, func_applied_on_index) + error_penalty
 
+def add_linear_regression_log_and_prediction(
+    country_info, data_name, applied_func, prediction_type):
+    """ use scipy's curve_fit to fit any function
+    """
+    column_applied_func = get_column_name_func(data_name, prediction_type, True, False)
+    # start_date, end_date = date_range
+    # country_info_ranged = country_info.loc[start_date:end_date]
+    # country_info_filtered = country_info.loc[start_date:end_date].dropna(how="any")
+    country_data = country_info[data_name]
+    country_data_filtered = country_data.dropna(how="any")
+    X = series_to_float(country_data_filtered.index)
+    X_extended = get_float_index(country_data)
+        # todo back to timestamps?
+    X = X_extended[:len(country_data_filtered.index)]
+    Y = series_to_float(country_data_filtered)
+    Y_pred, reg_error_pct, daily_growth_pct = \
+        make_prediction_error_growth(X, X_extended, Y, prediction_type,
+                                     applied_func)
     # add to dataframe
     prediction_series = pd.Series(np.round(Y_pred).ravel(),
                            name=get_column_name_func(data_name, prediction_type, False, True),
