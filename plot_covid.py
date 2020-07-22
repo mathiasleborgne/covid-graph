@@ -20,10 +20,9 @@ from fetch_excel import ExcelFetcher
 from fetch_apis import APIFetcher
 from math_utils import smooth_max, get_applied_func, smooth_curve, get_float_index, \
     mean_absolute_error_norm, mean_absolute_log_error_norm, series_to_float, \
-    quick_prediction_plot
+    quick_prediction_plot, predict_pwlf
 from publish import push_if_outdated, get_today_date_str, get_date_last_update
 from constants import *
-from experiment_pwlf import predict_pwlf
 
 
 """ This script:
