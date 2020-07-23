@@ -9,7 +9,7 @@ import pwlf  # https://jekel.me/piecewise_linear_fit_py/
 
 def is_post_peak_slopes(slopes):
     # print("slopes 0:{} 1:{}".format(slopes[0], slopes[1]))
-    return slopes[0] > 0. and slopes[1] < 0.
+    return slopes[0] > 0. and slopes[1] < 0. and slopes[1] < slopes[2]
 
 def predict_pwlf(country_data_series, index_float, index_float_extended, number_of_breakpoints):
     """ country_data is a numpy array
