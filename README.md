@@ -8,7 +8,7 @@ graphs and predictions for coronavirus daily cases and deaths.
 * Python scripts:
     + requests: fetch data (Excel/JSON)
     + pandas: containers for data
-    + numpy: curve_fit and other utilities
+    + numpy/pwlf: curve_fitting and other utilities
     + gitpython: automatic commits for update
 * Web:
     + Jekyll: static web pages generation
