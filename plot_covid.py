@@ -67,7 +67,7 @@ parser.add_argument("--publish_push", help="Publish data update on website", act
 parser.add_argument("--days_predict", help="Number of days to predict in the future", default=number_days_future_default, type=int)
 args = parser.parse_args()
 
-
+path_country_data_json = os.path.join("docs", "_data", "images_info.json")
 former_date = get_date_last_update()
 
 favorite_countries = [
@@ -142,12 +142,15 @@ def get_best_source(country_name):
         print("Chose Excel")
         return data_fetcher_excel
 
+def get_latest_date_index(country_info, data_name):
+    return country_info[data_name].dropna(how="any").index[-1]
+
 def get_peak_date(country_info, data_name):
     """ return peak date as pandas timestamp if detected, else None
     """
     max_country, argmax_country = smooth_max(country_info, data_name)
     country_data_smooth = country_info[data_name + "Smooth"].dropna(how="any")
-    today = country_info[data_name].dropna(how="any").index[-1]
+    today = get_latest_date_index(country_info, data_name)
     days_after_peak = (today - argmax_country).days
     latest_value = country_data_smooth[-1]
     if max_country == 0.:
@@ -203,7 +206,23 @@ def improve_country_name(country_name):
     except KeyError as e:
         return country_name
 
-def process_plot_country(country, country_info, data_fetcher):
+def get_past_predictions(country_name, data_name):
+    with open(path_country_data_json, "r") as json_file:
+        json_data = json.load(json_file)
+    try:
+        countries_predictions = {
+            country_data["country"]: country_data["past_predictions_" + data_name]
+            for country_data in json_data
+        } # todo: do this once
+        return countries_predictions[country_name]
+    except KeyError as error:
+        return {}
+
+def add_prediction(past_predictions, latest_prediction, date_timestamp):
+    past_predictions[date_timestamp.strftime('%Y-%m-%d')] = latest_prediction
+    return past_predictions
+
+def process_plot_country(country_name, country_info, data_fetcher):
     """ Get all data (including predictions) for a country
         Return a dict with the results, for later JSON conversion
     """
@@ -225,8 +244,8 @@ def process_plot_country(country, country_info, data_fetcher):
         country_all_results[data_name] = country_results_data
         country_info = updated_country_info
 
-    image_name_log = plot_country_log(country, country_all_results, country_info, data_fetcher, True)
-    image_name_normal = plot_country_log(country, country_all_results, country_info, data_fetcher, False)
+    image_name_log = plot_country_log(country_name, country_all_results, country_info, data_fetcher, True)
+    image_name_normal = plot_country_log(country_name, country_all_results, country_info, data_fetcher, False)
     index_str_list = [str(timestamp) for timestamp in country_info.index.tolist()]
 
     def export_data(data_name, smoothen=True):
@@ -239,10 +258,10 @@ def process_plot_country(country, country_info, data_fetcher):
         column_name = get_column_name_func(
             data_name, country_all_results[data_name]["prediction_type"], False, True)
         return export_data(column_name, False)
-
+    latest_date_index = get_latest_date_index(country_info, data_fetcher.get_cases_name())
     country_all_results = {
         "country_data": country_all_results,
-        "country": improve_country_name(country),
+        "country": improve_country_name(country_name),
         "image_name_log": image_name_log,
         "image_name_normal": image_name_normal,
         "dates": index_str_list,
@@ -250,6 +269,14 @@ def process_plot_country(country, country_info, data_fetcher):
         "new_deaths": export_data(data_fetcher.get_deaths_name()),
         "prediction_confirmed": export_data_prediction(data_fetcher.get_cases_name()),
         "prediction_deaths": export_data_prediction(data_fetcher.get_deaths_name()),
+        "past_predictions_confirmed": add_prediction(
+            get_past_predictions(country_name, "confirmed"),
+            export_data_prediction(data_fetcher.get_cases_name())[-1],
+            latest_date_index),
+        "past_predictions_deaths": add_prediction(
+            get_past_predictions(country_name, "deaths"),
+            export_data_prediction(data_fetcher.get_deaths_name())[-1],
+            latest_date_index),
     }
     return country_all_results
 
@@ -257,7 +284,7 @@ def save_json(file_name, content):
     """ Save as JSON file
     """
     with open(file_name, "w") as outfile:
-        json.dump(content, outfile)
+        json.dump(content, outfile, indent=4)
 
 def get_countries():
     """ Get the list of countries to process based on args
@@ -297,8 +324,7 @@ global_info = {
     "min_total_cases": min_total_cases,
     "date_last_update": get_today_date_str(),
 }
-
-save_json(os.path.join("docs", "_data", "images_info.json"), images_info)
+save_json(path_country_data_json, images_info)
 save_json(os.path.join("docs", "_data", "global_info.json"), global_info)
 
 if args.show and images_info:
