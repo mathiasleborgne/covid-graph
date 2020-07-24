@@ -1,1 +1,15 @@
-{"days_predict": 15, "favorite_countries": ["France", "USA", "UK", "Italy", "Belgium", "Germany", "Spain"], "min_new_cases": 100, "min_total_cases": 1000, "date_last_update": "July 23, 2020"}
+{
+    "days_predict": 15,
+    "favorite_countries": [
+        "France",
+        "USA",
+        "UK",
+        "Italy",
+        "Belgium",
+        "Germany",
+        "Spain"
+    ],
+    "min_new_cases": 100,
+    "min_total_cases": 1000,
+    "date_last_update": "July 24, 2020"
+}
