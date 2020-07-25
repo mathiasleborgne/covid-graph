@@ -42,7 +42,10 @@ The curves for daily new cases and deaths are fit to a list of models, and the b
 * or an increasing logistic curve (when it starts to flatten)
 * or a decreasing logistic, exponential or linear curve (when the peak seems past).
 
-Curve fitting uses `scipy.optimize.curve_fit`.
+Curve fitting uses :
+* `scipy.optimize.curve_fit`
+* or `pwlf` (piecewise linear fit, used on log scale)
+
 Based on this model, a 10-day prediction is inferred.
 
 ## Update
