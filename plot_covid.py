@@ -142,8 +142,11 @@ def get_best_source(country_name):
         print("Chose Excel")
         return data_fetcher_excel
 
-def get_latest_date_index(country_info, data_name):
-    return country_info[data_name].dropna(how="any").index[-1]
+def get_latest_date_index(country_info, data_name, is_extended=False):
+    if is_extended:
+        return country_info[data_name].index[-1]
+    else:
+        return country_info[data_name].dropna(how="any").index[-1]
 
 def get_peak_date(country_info, data_name):
     """ return peak date as pandas timestamp if detected, else None
@@ -258,7 +261,7 @@ def process_plot_country(country_name, country_info, data_fetcher):
         column_name = get_column_name_func(
             data_name, country_all_results[data_name]["prediction_type"], False, True)
         return export_data(column_name, False)
-    latest_date_index = get_latest_date_index(country_info, data_fetcher.get_cases_name())
+    latest_date_index = get_latest_date_index(country_info, data_fetcher.get_cases_name(), True)
     country_all_results = {
         "country_data": country_all_results,
         "country": improve_country_name(country_name),
