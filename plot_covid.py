@@ -307,35 +307,41 @@ def get_countries():
     else:
         return [args.country]
 
-images_info = []
-countries = get_countries()
-for index, country_name in enumerate(countries):
-    try:
-        print("Processing {} - ({}/{})"
-              .format(country_name, index + 1, len(countries)))
-        data_fetcher_best = get_best_source(country_name)
-        country_info = data_fetcher_best.get_country_info(country_name)
-        if country_info is None:
-            print("No case found for {}".format(country_name))
+def predict_all_countries(countries):
+    images_info = []
+    for index, country_name in enumerate(countries):
+        try:
+            print("Processing {} - ({}/{})"
+                  .format(country_name, index + 1, len(countries)))
+            data_fetcher_best = get_best_source(country_name)
+            country_info = data_fetcher_best.get_country_info(country_name)
+            if country_info is None:
+                print("No case found for {}".format(country_name))
+                continue
+            print("    {} cases"
+                  .format(data_fetcher_best.countries_max_cases_dict[country_name]))
+            image_info = process_plot_country(country_name, country_info, data_fetcher_best)
+            images_info.append(image_info)
+        except (ValueError, IndexError) as error:
+            print("No case found for {} (error: {})".format(country_name, error))
             continue
-        print("    {} cases"
-              .format(data_fetcher_best.countries_max_cases_dict[country_name]))
-        image_info = process_plot_country(country_name, country_info, data_fetcher_best)
-        images_info.append(image_info)
-    except (ValueError, IndexError) as error:
-        print("No case found for {} (error: {})".format(country_name, error))
-        continue
-    print()
+        print()
+    return images_info
 
-global_info = {
-    "days_predict": args.days_predict,
-    "favorite_countries": favorite_countries,
-    "min_new_cases": min_new_cases,
-    "min_total_cases": min_total_cases,
-    "date_last_update": get_today_date_str(),
-}
+def make_global_info():
+    return {
+        "days_predict": args.days_predict,
+        "favorite_countries": favorite_countries,
+        "min_new_cases": min_new_cases,
+        "min_total_cases": min_total_cases,
+        "date_last_update": get_today_date_str(),
+    }
+
+
+countries = get_countries()
+images_info = predict_all_countries(countries)
 save_json(path_country_data_json, images_info)
-save_json(os.path.join("docs", "_data", "global_info.json"), global_info)
+save_json(os.path.join("docs", "_data", "global_info.json"), make_global_info())
 
 if args.show and images_info:
     plt.show()
