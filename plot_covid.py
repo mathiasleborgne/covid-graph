@@ -14,12 +14,11 @@ import pandas as pd
 import numpy as np
 from pprint import pprint
 
-from math_utils import smooth_max, smooth_curve, mean_absolute_error_norm, \
-    get_error_with_smooth
+from utils import get_args, save_json
+from math_utils import smooth_max, smooth_curve, get_error_with_smooth
 from publish import push_if_outdated, get_today_date_str, get_date_last_update
 from prediction_tools import regress_predict_data, get_column_name_func
 from constants import *
-from utils import get_args, save_json
 from data_fetcher_utils import DataFetcherUtils
 
 """ This script:
@@ -48,6 +47,7 @@ from data_fetcher_utils import DataFetcherUtils
 args = get_args()
 former_date = get_date_last_update()
 data_fetcher_utils = DataFetcherUtils(args)
+print("Countries:", data_fetcher_utils.all_countries)
 
 favorite_countries = [
     "France",
@@ -68,12 +68,10 @@ def get_past_predictions_all_coutries(data_name):
         for country_data in json_data
     }
 
-countries_predictions = {
+countries_past_predictions = {
     data_name: get_past_predictions_all_coutries(data_name)
     for data_name in data_fetcher_utils.data_names
 }
-
-print("Countries:", data_fetcher_utils.all_countries)
 
 
 def get_latest_date_index(country_info, data_name, is_extended=False):
@@ -116,13 +114,9 @@ def plot_country_log(country, all_results, country_info, data_fetcher, log_scale
         prediction_columns_names += ["casesSmooth", "deathsSmooth"]
     ax = country_info.reset_index()\
         .plot(x="index", y=data_names + prediction_columns_names)
-    # ax = country_info.reset_index().plot(x="index", y=["casesLog", "deathsLog", "PredictionLog"])
-    # ax = country_info.reset_index().plot(x="index", y=["cases", "deaths"])
     if log_scale:
         ax.set_yscale("log")
     plt.xlabel("date")
-
-    # plt.ylabel("log_10")
     if args.show:
         case_data_name = data_names[0]
         plt.title("{} - Cases/Deaths\n(Reg. error: {:.1f} pct / Daily growth: {:.1f} pct)"
@@ -145,7 +139,7 @@ def improve_country_name(country_name):
 
 def get_past_predictions(country_name, data_name):
     try:
-        return countries_predictions[data_name][country_name]
+        return countries_past_predictions[data_name][country_name]
     except KeyError as error:
         return {}
 
