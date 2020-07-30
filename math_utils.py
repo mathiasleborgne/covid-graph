@@ -152,3 +152,12 @@ def predict_pwlf(country_data_series, index_float, index_float_extended, number_
     return predict_on_index(index_float_extended), \
         predict_on_index(index_float_non_zero), \
         is_post_peak_slopes(slopes)
+
+
+def get_error_with_smooth(country_info, data_name):
+    """ mean absolute error between raw and smoothened curves
+    """
+    country_data_smooth = country_info[data_name + "Smooth"].dropna(how="any")
+    len_smooth = len(country_data_smooth)
+    country_data = country_info[data_name].dropna(how="any")[:len_smooth]
+    return mean_absolute_error_norm(country_data_smooth, country_data)
