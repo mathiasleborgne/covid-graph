@@ -12,7 +12,6 @@ import os
 import datetime
 import pandas as pd
 import numpy as np
-import argparse
 from pprint import pprint
 
 from fetch_excel import ExcelFetcher
@@ -21,6 +20,7 @@ from math_utils import smooth_max, smooth_curve, mean_absolute_error_norm
 from publish import push_if_outdated, get_today_date_str, get_date_last_update
 from prediction_tools import regress_predict_data, get_column_name_func
 from constants import *
+from utils import get_args, save_json
 
 
 """ This script:
@@ -50,22 +50,7 @@ from constants import *
             - fully split maths/excel fetch
             - objects
 """
-
-# parser -------------------------------------------
-parser = argparse.ArgumentParser()
-parser.add_argument("--reload", help="reload xlsx", action="store_true")
-parser.add_argument("--start_date", help="Date in format 2020-3-1", default=None)
-parser.add_argument("--country", help="Select a specific country", default="France")
-parser.add_argument("--favorite", help="Favorite countries", action="store_true")
-parser.add_argument("--all", help="All countries", action="store_true")
-parser.add_argument("--show", help="Show images", action="store_true")
-parser.add_argument("--excel", help="Get data from excel instead of api", action="store_true")
-parser.add_argument("--save_imgs", help="Save images", action="store_true")
-parser.add_argument("--temp_curves", help="Show temporary curves", action="store_true")
-parser.add_argument("--publish", help="Commit data update, don't push", action="store_true")
-parser.add_argument("--publish_push", help="Publish data update on website", action="store_true")
-parser.add_argument("--days_predict", help="Number of days to predict in the future", default=number_days_future_default, type=int)
-args = parser.parse_args()
+args = get_args()
 
 path_country_data_json = os.path.join("docs", "_data", "images_info.json")
 former_date = get_date_last_update()
@@ -80,13 +65,6 @@ favorite_countries = [
     "Spain",
 ]
 
-improved_country_names = {
-    # when you get a bad name like those on the left,
-    # replace by bame on the right
-    "USA": "United States of America",
-    "UK": "United kingdom",
-    "S. Korea": "South Korea",
-}
 
 data_fetcher_excel = ExcelFetcher(args, args.reload)
 data_fetcher_api = APIFetcher(args)
@@ -292,12 +270,6 @@ def process_plot_country(country_name, country_info, data_fetcher):
             prediction_deaths[-1], latest_date_index),
     }
     return country_json_dict
-
-def save_json(file_name, content):
-    """ Save as JSON file
-    """
-    with open(file_name, "w") as outfile:
-        json.dump(content, outfile, indent=4)
 
 def get_countries():
     """ Get the list of countries to process based on args
