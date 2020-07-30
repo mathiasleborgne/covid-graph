@@ -97,6 +97,19 @@ else:
 
 data_names = data_fetcher_default.get_data_names()
 
+def get_past_predictions_all_coutries(data_name):
+    with open(path_country_data_json, "r") as json_file:
+        json_data = json.load(json_file)
+    return {
+        country_data["country"]: country_data["past_predictions_" + data_name]
+        for country_data in json_data
+    }
+
+countries_predictions = {
+    data_name: get_past_predictions_all_coutries(data_name)
+    for data_name in data_names
+}
+
 all_countries = data_fetcher_default.get_all_countries()
 print("Countries:", all_countries)
 
@@ -210,14 +223,8 @@ def improve_country_name(country_name):
         return country_name
 
 def get_past_predictions(country_name, data_name):
-    with open(path_country_data_json, "r") as json_file:
-        json_data = json.load(json_file)
     try:
-        countries_predictions = {
-            country_data["country"]: country_data["past_predictions_" + data_name]
-            for country_data in json_data
-        } # todo: do this once
-        return countries_predictions[country_name]
+        return countries_predictions[data_name][country_name]
     except KeyError as error:
         return {}
 
@@ -272,12 +279,12 @@ def process_plot_country(country_name, country_info, data_fetcher):
         "new_deaths": export_data(data_fetcher.get_deaths_name()),
         "prediction_confirmed": export_data_prediction(data_fetcher.get_cases_name()),
         "prediction_deaths": export_data_prediction(data_fetcher.get_deaths_name()),
-        "past_predictions_confirmed": add_prediction(
-            get_past_predictions(country_name, "confirmed"),
+        "past_predictions_new_confirmed": add_prediction(
+            get_past_predictions(country_name, "new_confirmed"),
             export_data_prediction(data_fetcher.get_cases_name())[-1],
             latest_date_index),
-        "past_predictions_deaths": add_prediction(
-            get_past_predictions(country_name, "deaths"),
+        "past_predictions_new_deaths": add_prediction(
+            get_past_predictions(country_name, "new_deaths"),
             export_data_prediction(data_fetcher.get_deaths_name())[-1],
             latest_date_index),
     }
