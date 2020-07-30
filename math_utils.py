@@ -1,6 +1,6 @@
 """ Math related utilities, including math functions for curve fitting
 """
-
+from constants import default_smoothing_length
 import numpy as np
 from sklearn.metrics import mean_absolute_error
 import matplotlib.pyplot as plt
@@ -15,11 +15,9 @@ def shift(xs, n):
     else:
         return np.r_[xs[-n:], np.full(-n, np.nan)]
 
-def smooth_curve(y, n_pts_box=7):
+def smooth_curve(y, n_pts_box=default_smoothing_length):
     # n_pts_box: width of the window
-    # todo: put it in constants
     box = np.ones(n_pts_box)/n_pts_box
-
     y_smooth = np.convolve(y, box, mode='same')
     # y_smooth_shifted = shift(y_smooth, -int(n_pts_box/2))
     # no need to shift
