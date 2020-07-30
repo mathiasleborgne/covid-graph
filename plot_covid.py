@@ -11,6 +11,7 @@ import math
 import os
 import datetime
 import pandas as pd
+import numpy as np
 import argparse
 from pprint import pprint
 
@@ -63,7 +64,6 @@ parser.add_argument("--save_imgs", help="Save images", action="store_true")
 parser.add_argument("--temp_curves", help="Show temporary curves", action="store_true")
 parser.add_argument("--publish", help="Commit data update, don't push", action="store_true")
 parser.add_argument("--publish_push", help="Publish data update on website", action="store_true")
-
 parser.add_argument("--days_predict", help="Number of days to predict in the future", default=number_days_future_default, type=int)
 args = parser.parse_args()
 
@@ -232,6 +232,18 @@ def add_prediction(past_predictions, latest_prediction, date_timestamp):
     past_predictions[date_timestamp.strftime('%Y-%m-%d')] = latest_prediction
     return past_predictions
 
+def export_data(country_info, data_name, smoothen=True):
+    if smoothen:
+        floats_array = smooth_curve(country_info[data_name].values)
+    else:
+        floats_array = country_info[data_name].values
+    return floats_array.tolist()
+
+def export_data_prediction(country_info, country_all_results, data_name):
+    column_name = get_column_name_func(
+        data_name, country_all_results[data_name]["prediction_type"], False, True)
+    return export_data(country_info, column_name, False)
+
 def process_plot_country(country_name, country_info, data_fetcher):
     """ Get all data (including predictions) for a country
         Return a dict with the results, for later JSON conversion
@@ -257,38 +269,27 @@ def process_plot_country(country_name, country_info, data_fetcher):
     image_name_log = plot_country_log(country_name, country_all_results, country_info, data_fetcher, True)
     image_name_normal = plot_country_log(country_name, country_all_results, country_info, data_fetcher, False)
     index_str_list = [str(timestamp) for timestamp in country_info.index.tolist()]
-
-    def export_data(data_name, smoothen=True):
-        if smoothen:
-            return smooth_curve(country_info[data_name].values).tolist()
-        else:
-            return country_info[data_name].values.tolist()
-
-    def export_data_prediction(data_name):
-        column_name = get_column_name_func(
-            data_name, country_all_results[data_name]["prediction_type"], False, True)
-        return export_data(column_name, False)
     latest_date_index = get_latest_date_index(country_info, data_fetcher.get_cases_name(), True)
-    country_all_results = {
+    prediction_confirmed = export_data_prediction(country_info, country_all_results, data_fetcher.get_cases_name())
+    prediction_deaths = export_data_prediction(country_info, country_all_results, data_fetcher.get_deaths_name())
+    country_json_dict = {
         "country_data": country_all_results,
         "country": improve_country_name(country_name),
         "image_name_log": image_name_log,
         "image_name_normal": image_name_normal,
         "dates": index_str_list,
-        "new_confirmed": export_data(data_fetcher.get_cases_name()),
-        "new_deaths": export_data(data_fetcher.get_deaths_name()),
-        "prediction_confirmed": export_data_prediction(data_fetcher.get_cases_name()),
-        "prediction_deaths": export_data_prediction(data_fetcher.get_deaths_name()),
+        "new_confirmed": export_data(country_info, data_fetcher.get_cases_name()),
+        "new_deaths": export_data(country_info, data_fetcher.get_deaths_name()),
+        "prediction_confirmed": prediction_confirmed,
+        "prediction_deaths": prediction_deaths,
         "past_predictions_new_confirmed": add_prediction(
             get_past_predictions(country_name, "new_confirmed"),
-            export_data_prediction(data_fetcher.get_cases_name())[-1],
-            latest_date_index),
+            prediction_confirmed[-1], latest_date_index),
         "past_predictions_new_deaths": add_prediction(
             get_past_predictions(country_name, "new_deaths"),
-            export_data_prediction(data_fetcher.get_deaths_name())[-1],
-            latest_date_index),
+            prediction_deaths[-1], latest_date_index),
     }
-    return country_all_results
+    return country_json_dict
 
 def save_json(file_name, content):
     """ Save as JSON file
