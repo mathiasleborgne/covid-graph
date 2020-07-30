@@ -237,7 +237,9 @@ def export_data(country_info, data_name, smoothen=True):
         floats_array = smooth_curve(country_info[data_name].values)
     else:
         floats_array = country_info[data_name].values
-    return floats_array.tolist()
+    # decimals: rounding is done to lighten the JSON file,
+    # in order to make website loading faster
+    return floats_array.round(decimals=1).tolist()
 
 def export_data_prediction(country_info, country_all_results, data_name):
     column_name = get_column_name_func(
