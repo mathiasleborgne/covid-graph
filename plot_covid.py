@@ -51,8 +51,6 @@ from utils import get_args, save_json
             - objects
 """
 args = get_args()
-
-path_country_data_json = os.path.join("docs", "_data", "images_info.json")
 former_date = get_date_last_update()
 
 favorite_countries = [
@@ -206,7 +204,7 @@ def get_past_predictions(country_name, data_name):
     except KeyError as error:
         return {}
 
-def add_prediction(past_predictions, latest_prediction, date_timestamp):
+def add_past_prediction(past_predictions, latest_prediction, date_timestamp):
     past_predictions[date_timestamp.strftime('%Y-%m-%d')] = latest_prediction
     return past_predictions
 
@@ -245,7 +243,9 @@ def process_plot_country(country_name, country_info, data_fetcher):
             regress_predict_data(data_name, country_info, is_peak)
         country_all_results[data_name] = country_results_data
         country_info = updated_country_info
+    return country_info, country_all_results
 
+def make_country_json_dict(country_name, country_info, data_fetcher, country_all_results):
     image_name_log = plot_country_log(country_name, country_all_results, country_info, data_fetcher, True)
     image_name_normal = plot_country_log(country_name, country_all_results, country_info, data_fetcher, False)
     index_str_list = [str(timestamp) for timestamp in country_info.index.tolist()]
@@ -255,17 +255,17 @@ def process_plot_country(country_name, country_info, data_fetcher):
     country_json_dict = {
         "country_data": country_all_results,
         "country": improve_country_name(country_name),
-        "image_name_log": image_name_log,
-        "image_name_normal": image_name_normal,
+        "image_name_log": image_name_log, # todo: remove?
+        "image_name_normal": image_name_normal, # todo: remove?
         "dates": index_str_list,
         "new_confirmed": export_data(country_info, data_fetcher.get_cases_name()),
         "new_deaths": export_data(country_info, data_fetcher.get_deaths_name()),
         "prediction_confirmed": prediction_confirmed,
         "prediction_deaths": prediction_deaths,
-        "past_predictions_new_confirmed": add_prediction(
+        "past_predictions_new_confirmed": add_past_prediction(
             get_past_predictions(country_name, "new_confirmed"),
             prediction_confirmed[-1], latest_date_index),
-        "past_predictions_new_deaths": add_prediction(
+        "past_predictions_new_deaths": add_past_prediction(
             get_past_predictions(country_name, "new_deaths"),
             prediction_deaths[-1], latest_date_index),
     }
@@ -298,8 +298,12 @@ def predict_all_countries(countries):
                 continue
             print("    {} cases"
                   .format(data_fetcher_best.countries_max_cases_dict[country_name]))
-            image_info = process_plot_country(country_name, country_info, data_fetcher_best)
-            images_info.append(image_info)
+            country_info, country_all_results = \
+                process_plot_country(country_name, country_info,
+                                     data_fetcher_best)
+            country_json_dict = make_country_json_dict(country_name, country_info,
+                                                       data_fetcher, country_all_results)
+            images_info.append(country_json_dict)
         except (ValueError, IndexError) as error:
             print("No case found for {} (error: {})".format(country_name, error))
             continue

@@ -1,5 +1,8 @@
 """ Constants for plot_covid script, including parser default values, settings, etc
 """
+
+import os
+
 min_new_cases = 100
 min_total_cases = 1000
 min_cases_start_date = 30
@@ -17,3 +20,5 @@ improved_country_names = {
     "UK": "United kingdom",
     "S. Korea": "South Korea",
 }
+
+path_country_data_json = os.path.join("docs", "_data", "images_info.json")
