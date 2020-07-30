@@ -34,10 +34,8 @@ from utils import get_args, save_json
         - plots the figures and prediction
 
     Todo:
-        - check figures for duplicated dates
         - sort by max cases ever?
         - start at 50 cases
-        - spinners
         - collapse explanation
         - french regions?
         - detect new_cases = delay1(deaths) + delay2(recovered)
@@ -47,8 +45,6 @@ from utils import get_args, save_json
         - anchor links
         - facebook likes count
         - refactor
-            - fully split maths/excel fetch
-            - objects
 """
 args = get_args()
 former_date = get_date_last_update()
