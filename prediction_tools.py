@@ -1,3 +1,6 @@
+""" Utilities to process, fit curves and make predictions on time series 
+"""
+
 import scipy
 import pandas as pd
 import numpy as np
