@@ -332,6 +332,8 @@ def predict_all_countries(countries):
     return images_info
 
 def make_global_info():
+    """ Make JSON dictionary with global information (not country-specific) 
+    """
     return {
         "days_predict": args.days_predict,
         "favorite_countries": favorite_countries,
