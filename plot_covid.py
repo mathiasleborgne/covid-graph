@@ -311,6 +311,9 @@ def get_countries():
         return [args.country]
 
 def predict_all_countries(countries):
+    """ Make processing/prediction for a list of countries,
+        return JSON dict with countries data 
+    """
     images_info = []
     for index, country_name in enumerate(countries):
         try:
