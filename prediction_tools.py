@@ -21,6 +21,9 @@ def get_column_name_func(column_name, prediction_type, is_inverted, is_predictio
 
 # regression -----------------------------
 def make_prediction_error_growth(X, X_extended, Y, prediction_type, applied_func, country_data_filtered):
+    """ make curve fitting, extend it to make prediction 
+        Compute regression error and daily growth 
+    """
     error_penalty = 0.
 
     if prediction_type == "LogPiecewiseLinearFit3":
