@@ -54,7 +54,8 @@ def make_prediction_error_growth(X, X_extended, Y, prediction_type, applied_func
 
 def add_linear_regression_log_and_prediction(
     country_info, data_name, applied_func, prediction_type):
-    """ use scipy's curve_fit to fit any function
+    """ preprocess data for prediction (extend range, index as floats) 
+        Pack the results in a JSON file 
     """
     column_applied_func = get_column_name_func(data_name, prediction_type, True, False)
     # start_date, end_date = date_range
