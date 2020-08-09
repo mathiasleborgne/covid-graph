@@ -124,7 +124,12 @@ def quick_prediction_plot(country_data, index_float, index_float_extended, predi
 
 def is_post_peak_slopes(slopes):
     # print("slopes 0:{} 1:{}".format(slopes[0], slopes[1]))
-    return slopes[0] > 0. and slopes[1] < 0. and slopes[1] < slopes[2]
+    if len(slopes) == 3 or len(slopes) == 4:
+        is_rebound = slopes[0] > 0. and slopes[1] < 0. and slopes[1] < slopes[2]
+        return is_rebound
+    else:
+        print("Warning: Bad slopes")
+        return False
 
 def predict_pwlf(country_data_series, index_float, index_float_extended, number_of_breakpoints):
     """ country_data_series is a pandas series

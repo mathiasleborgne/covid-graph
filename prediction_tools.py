@@ -26,14 +26,19 @@ def make_prediction_error_growth(X, X_extended, Y, prediction_type, applied_func
     """
     error_penalty = 0.
 
-    if prediction_type == "LogPiecewiseLinearFit3":
-        Y_pred, func_applied_on_index, is_post_peak_slopes = predict_pwlf(country_data_filtered, X, X_extended, 3)
+    if prediction_type in ["LogPiecewiseLinearFit3", "LogPiecewiseLinearFit4"]:
+        if prediction_type == "LogPiecewiseLinearFit3":
+            n_break_points = 3
+        else:
+            # error_penalty += 5.
+            n_break_points = 4
+        Y_pred, func_applied_on_index, is_post_peak_slopes = predict_pwlf(country_data_filtered, X, X_extended, n_break_points)
         # todo: predict_pwlf shouldn't use country_data_filtered
         daily_growth_pct= 0. # todo
         # print("is_post_peak_slopes", is_post_peak_slopes)
         if not is_post_peak_slopes:
             # bigger error if slopes don't correspond to growth + decrease + growth/decrease
-            error_penalty = 20.
+            error_penalty += 20.
     else:
         popt, pcov = scipy.optimize.curve_fit(applied_func, X, Y)
         applied_func_params = lambda x: applied_func(x, *popt)
@@ -104,7 +109,7 @@ def get_latest_value(pd_series):
 def regress_predict_data(data_name, country_info, is_peak):
     """ get country info with predictions added, plus some country-level info for JSON export
     """
-    prediction_types = ["Logistics", "Exponential", "LogPiecewiseLinearFit3"]
+    prediction_types = ["Logistics", "Exponential", "LogPiecewiseLinearFit3", "LogPiecewiseLinearFit4"]
     # LogPiecewiseLinearFit3 is OK without peak because of the USA example with 1st low peak, then higher rebound
     if is_peak: # forbid logistics+exp if peak is too close
         prediction_types.append("Logistics + Exponential")
