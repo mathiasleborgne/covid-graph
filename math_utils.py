@@ -24,6 +24,9 @@ def smooth_curve(y, n_pts_box=default_smoothing_length):
     return y_smooth
 
 def smooth_max(country_info, data_name):
+    """ return max and argmax for smoothened curve 
+        It needs to be already smoothened 
+    """ 
     y_smooth = country_info[data_name + "Smooth"]
     max_y = y_smooth.max()
     argmax_y = y_smooth.idxmax(axis=1)
