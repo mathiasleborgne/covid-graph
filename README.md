@@ -41,7 +41,7 @@ The curves for daily new cases and deaths are fit to a list of models, and the b
 * an increasing exponential curve (when it doesn't look flat yet)
 * or an increasing logistic curve (when it starts to flatten)
 * or a decreasing logistic, exponential or linear curve (when the peak seems past).
-* or a piecewise linear fit in the log scale
+* or a piecewise linear fit in the log scale.
 
 Curve fitting uses :
 * `scipy.optimize.curve_fit`
