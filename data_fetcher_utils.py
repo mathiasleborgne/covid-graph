@@ -2,6 +2,8 @@ from fetch_excel import ExcelFetcher
 from fetch_apis import APIFetcher
 from math_utils import smooth_curve, get_error_with_smooth
 
+""" handle several data fetcher 
+"""
 
 def get_country_info_with_error(country_name, data_fetcher):
     """ get dataframe for the country, and the error compared to smooth curve
