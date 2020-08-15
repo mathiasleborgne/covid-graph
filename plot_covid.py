@@ -225,7 +225,7 @@ def get_countries():
 
 def predict_all_countries(countries):
     """ Make processing/prediction for a list of countries,
-        return JSON dict with countries data 
+        return JSON dict with countries data
     """
     images_info = []
     for index, country_name in enumerate(countries):
@@ -253,7 +253,7 @@ def predict_all_countries(countries):
     return images_info
 
 def make_global_info():
-    """ Make JSON dictionary with global information (not country-specific) 
+    """ Make JSON dictionary with global information (not country-specific)
     """
     return {
         "days_predict": args.days_predict,

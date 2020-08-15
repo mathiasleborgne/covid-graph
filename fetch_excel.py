@@ -1,4 +1,4 @@
-""" fetch data from an excel file available on a Web page 
+""" fetch data from an excel file available on a Web page
 """
 
 import requests
