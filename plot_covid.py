@@ -60,19 +60,6 @@ favorite_countries = [
 ]
 
 
-def get_past_predictions_all_coutries(data_name):
-    with open(path_country_data_json, "r") as json_file:
-        json_data = json.load(json_file)
-    return {
-        country_data["country"]: country_data["past_predictions_" + data_name]
-        for country_data in json_data
-    }
-
-countries_past_predictions = {
-    data_name: get_past_predictions_all_coutries(data_name)
-    for data_name in data_fetcher_utils.data_names
-}
-
 
 def get_latest_date_index(country_info, data_name, is_extended=False):
     if is_extended:
@@ -137,15 +124,11 @@ def improve_country_name(country_name):
     except KeyError as e:
         return country_name
 
-def get_past_predictions(country_name, data_name):
-    try:
-        return countries_past_predictions[data_name][country_name]
-    except KeyError as error:
-        return {}
 
 def add_past_prediction(past_predictions, latest_prediction, date_timestamp):
     past_predictions[date_timestamp.strftime('%Y-%m-%d')] = latest_prediction
     return past_predictions
+
 
 def export_data(country_info, data_name, country_population, smoothen=True):
     if smoothen:
@@ -204,10 +187,10 @@ def make_country_json_dict(country_name, country_info, data_fetcher, country_all
         "prediction_confirmed": prediction_confirmed,
         "prediction_deaths": prediction_deaths,
         "past_predictions_new_confirmed": add_past_prediction(
-            get_past_predictions(country_name, "new_confirmed"),
+            data_fetcher_utils.get_past_predictions(country_name, "new_confirmed"),
             prediction_confirmed[-1], latest_date_index),
         "past_predictions_new_deaths": add_past_prediction(
-            get_past_predictions(country_name, "new_deaths"),
+            data_fetcher_utils.get_past_predictions(country_name, "new_deaths"),
             prediction_deaths[-1], latest_date_index),
     }
     return country_json_dict

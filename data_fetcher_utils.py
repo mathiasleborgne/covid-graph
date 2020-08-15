@@ -1,6 +1,8 @@
 from fetch_excel import ExcelFetcher
 from fetch_apis import APIFetcher
 from math_utils import smooth_curve, get_error_with_smooth
+from constants import path_country_data_json
+import json
 
 """ handle several data fetcher 
 """
@@ -27,6 +29,10 @@ class DataFetcherUtils(object):
             self.data_fetcher_default = self.data_fetcher_api
         self.data_names = self.data_fetcher_default.get_data_names()
         self.all_countries = self.data_fetcher_default.get_all_countries()
+        self.countries_past_predictions = {
+            data_name: self.get_past_predictions_all_coutries(data_name)
+            for data_name in self.data_names
+        }
 
 
     def get_best_source(self, country_name):
@@ -51,3 +57,17 @@ class DataFetcherUtils(object):
         else:
             print("Chose Excel")
             return self.data_fetcher_excel
+
+    def get_past_predictions_all_coutries(self, data_name):
+        with open(path_country_data_json, "r") as json_file:
+            json_data = json.load(json_file)
+        return {
+            country_data["country"]: country_data["past_predictions_" + data_name]
+            for country_data in json_data
+        }
+
+    def get_past_predictions(self, country_name, data_name):
+        try:
+            return self.countries_past_predictions[data_name][country_name]
+        except KeyError as error:
+            return {}
