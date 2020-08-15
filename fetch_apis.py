@@ -42,6 +42,10 @@ class APIFetcher(DataFetcher):
             country_reduced_data["name"]: country_reduced_data["code"]
             for country_reduced_data in self.all_countries_reduced_data
         }
+        self.populations_dict = {
+            country_reduced_data["name"]: country_reduced_data["population"]
+            for country_reduced_data in self.all_countries_reduced_data
+        }
 
     def get_cases_name(self):
         """ cases columns have different names based on sources (excel/api)
@@ -64,6 +68,9 @@ class APIFetcher(DataFetcher):
 
     def fetch_country_info(self, country_name):
         return get_country_by_api(self.country_code_dict[country_name])
+
+    def get_country_population(self, country_name):
+        return self.populations_dict[country_name]
 
 if __name__ == '__main__':
     pprint(get_country_by_api("FR"))

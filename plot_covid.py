@@ -147,19 +147,22 @@ def add_past_prediction(past_predictions, latest_prediction, date_timestamp):
     past_predictions[date_timestamp.strftime('%Y-%m-%d')] = latest_prediction
     return past_predictions
 
-def export_data(country_info, data_name, smoothen=True):
+def export_data(country_info, data_name, country_population, smoothen=True):
     if smoothen:
         floats_array = smooth_curve(country_info[data_name].values)
     else:
         floats_array = country_info[data_name].values
+    # normalizing in cases per million
+    floats_array = floats_array / (country_population / 1.0e6)
     # decimals: rounding is done to lighten the JSON file,
     # in order to make website loading faster
     return floats_array.round(decimals=1).tolist()
 
-def export_data_prediction(country_info, country_all_results, data_name):
+def export_data_prediction(country_info, country_all_results, data_name,
+                           country_population):
     column_name = get_column_name_func(
         data_name, country_all_results[data_name]["prediction_type"], False, True)
-    return export_data(country_info, column_name, False)
+    return export_data(country_info, column_name, country_population, False)
 
 def process_plot_country(country_name, country_info, data_fetcher):
     """ Get all data (including predictions) for a country
@@ -189,14 +192,15 @@ def process_plot_country(country_name, country_info, data_fetcher):
 def make_country_json_dict(country_name, country_info, data_fetcher, country_all_results):
     index_str_list = [str(timestamp) for timestamp in country_info.index.tolist()]
     latest_date_index = get_latest_date_index(country_info, data_fetcher.get_cases_name(), True)
-    prediction_confirmed = export_data_prediction(country_info, country_all_results, data_fetcher.get_cases_name())
-    prediction_deaths = export_data_prediction(country_info, country_all_results, data_fetcher.get_deaths_name())
+    country_population = data_fetcher.get_country_population(country_name)
+    prediction_confirmed = export_data_prediction(country_info, country_all_results, data_fetcher.get_cases_name(), country_population)
+    prediction_deaths = export_data_prediction(country_info, country_all_results, data_fetcher.get_deaths_name(), country_population)
     country_json_dict = {
         "country_data": country_all_results,
         "country": improve_country_name(country_name),
         "dates": index_str_list,
-        "new_confirmed": export_data(country_info, data_fetcher.get_cases_name()),
-        "new_deaths": export_data(country_info, data_fetcher.get_deaths_name()),
+        "new_confirmed": export_data(country_info, data_fetcher.get_cases_name(), country_population),
+        "new_deaths": export_data(country_info, data_fetcher.get_deaths_name(), country_population),
         "prediction_confirmed": prediction_confirmed,
         "prediction_deaths": prediction_deaths,
         "past_predictions_new_confirmed": add_past_prediction(

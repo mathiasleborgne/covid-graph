@@ -34,11 +34,13 @@
             <p class="mb-2">
               The curves are displayed:
               <ul>
+                <li>by million of inhabitants (in order to compare the countries)
+                </li>
                 <li>in a logarithmic manner, which means that each additional unit on the y-axis makes the number 10 times bigger.
                 </li>
                 <li>with an average on the 7 last days (to compensate missing figures from the week-end for instance)</li>
               </ul>
-              Their trends are compared to:
+              In order to make predictions, their trends are compared to:
               <ul>
                 <li> an increasing exponential curve (when it doesn't look flat yet, see explanation <a href="https://youtu.be/Kas0tIxDvrg">here</a>),</li>
                 <li> or an increasing logistic curve (when it starts to flatten)</li>
@@ -226,13 +228,22 @@
           {% unless forloop.last %},{% endunless %}
         {% endfor %}
       };
-
+      var title = {
+        text:'cases/deaths per million inhabitants',
+        font: {
+          // family: 'Courier New, monospace',
+          size: 10
+        },
+        // xref: 'paper',
+        // x: 0.05,
+      };
       var x_axis_layout = {
         // font: {size: 12},
         type: 'date',
         autorange: true
       };
       var layout_log = {
+        title: title,
         xaxis: x_axis_layout,
         yaxis: {
           type: 'log',
@@ -241,6 +252,7 @@
         // title:'Log view'
       };
       var layout_normal = {
+        title: title,
         xaxis: x_axis_layout,
         yaxis: {
           autorange: true

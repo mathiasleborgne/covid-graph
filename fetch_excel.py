@@ -111,6 +111,10 @@ class ExcelFetcher(DataFetcher):
         return self.world_info[
             self.world_info["countriesAndTerritories"].isin([country_name])]
 
+    def get_country_population(self, country_name):
+        country_info = self.get_country_info(country_name)
+        return country_info["popData2019"][0]
+
 
 if __name__ == '__main__':
     fake_args = FakeArgs()
