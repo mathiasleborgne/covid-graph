@@ -62,6 +62,8 @@ favorite_countries = [
 
 
 def get_latest_date_index(country_info, data_name, is_extended=False):
+    """ get the latest date of index, NaN included if extended (=with prediction) 
+    """
     if is_extended:
         return country_info[data_name].index[-1]
     else:
