@@ -1,3 +1,6 @@
+""" Miscellaneous useful functions 
+"""
+
 import argparse
 import json
 from constants import number_days_future_default
