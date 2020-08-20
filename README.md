@@ -36,7 +36,7 @@ The "smoother" source is chosen (i.e. with smallest error compared to the curved
 
 ## Predictions
 
-The curves for daily new cases and deaths are fit to a list of models, and the best model is used, amongst:
+The curves for daily new cases and deaths (per million inhabitants) are fit to a list of models, and the best model is used, amongst:
 
 * an increasing exponential curve (when it doesn't look flat yet)
 * or an increasing logistic curve (when it starts to flatten)
