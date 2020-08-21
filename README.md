@@ -82,3 +82,7 @@ To update, push any commit on this server. An additional automatic commit will b
       --days_predict DAYS_PREDICT
                             Number of days to predict in the future
 
+## History 
+
+* July: add linear piecewise fit in log space 
+* August: switch to new cases / deaths per million inhabitants 
