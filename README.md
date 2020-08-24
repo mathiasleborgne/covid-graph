@@ -84,5 +84,6 @@ To update, push any commit on this server. An additional automatic commit will b
 
 ## History 
 
-* July: add linear piecewise fit in log space 
-* August: switch to new cases / deaths per million inhabitants 
+* May 2020: use plotly for interactive display of the curves
+* July 2020: add linear piecewise fit in log space 
+* August 2020: switch to new cases / deaths per million inhabitants 
