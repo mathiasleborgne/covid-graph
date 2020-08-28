@@ -3,7 +3,7 @@
 
 import os
 
-min_new_cases = 100
+min_new_cases = 100 # minimum number of cases to start displaying a curve
 min_total_cases = 1000
 min_cases_start_date = 30
 min_days_post_peak = 12 # minimum number of decrease days after smooth curve peak
