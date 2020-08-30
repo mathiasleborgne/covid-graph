@@ -18,6 +18,10 @@ graphs and predictions for coronavirus daily cases and deaths.
 
 ## Miscellaneous Examples
 
+| Example August 07 (USA) | Example August 07 (France) |
+|----------------------|--------------------------|
+| ![Cases/Deaths USA 08/07/2020](usa_aug_07.PNG "Cases/Deaths USA 08/07/2020") | ![Cases/Deaths France 08/07/2020](france_aug_07.PNG "Cases/Deaths France 08/07/2020") |
+
 | Example May 19 (USA) | Example April 17 (Italy) |
 |----------------------|--------------------------|
 | ![Cases/Deaths 05/19/2020](ScreenshotMay19.png "Cases/Deaths 05/19/2020") | ![Cases/Deaths 04/17/2020](ScreenshotApril17.png "Cases/Deaths 04/17/2020") |
