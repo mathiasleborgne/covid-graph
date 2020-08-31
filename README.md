@@ -90,5 +90,5 @@ To update, push any commit on this server. An additional automatic commit will b
 
 * April 2020: use images to display the curves
 * May 2020: use plotly for interactive display of the curves
-* July 2020: add linear piecewise fit in log space 
+* July 2020: add linear piecewise fit in log space, smooth curves on 7 days window 
 * August 2020: switch to new cases / deaths per million inhabitants 
