@@ -21,4 +21,4 @@ improved_country_names = {
     "S. Korea": "South Korea",
 }
 
-path_country_data_json = os.path.join("docs", "_data", "images_info.json")
+path_country_data_json = os.path.join("docs", "_data", "images_info.json")  # path for Jekyll's JSON files, where data is exported by the script
