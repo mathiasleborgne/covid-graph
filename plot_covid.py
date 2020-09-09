@@ -175,6 +175,8 @@ def process_plot_country(country_name, country_info, data_fetcher):
     return country_info, country_all_results
 
 def make_country_json_dict(country_name, country_info, data_fetcher, country_all_results):
+    """ Build dict per country for subsequent JSON export
+    """
     index_str_list = [str(timestamp) for timestamp in country_info.index.tolist()]
     latest_date_index = get_latest_date_index(country_info, data_fetcher.get_cases_name(), True)
     country_population = data_fetcher.get_country_population(country_name)
