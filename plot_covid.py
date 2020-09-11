@@ -133,6 +133,8 @@ def add_past_prediction(past_predictions, latest_prediction, date_timestamp):
 
 
 def export_data(country_info, data_name, country_population, smoothen=True):
+    """ convert a data series from country_info to a list of floats for JSON export
+    """
     if smoothen:
         floats_array = smooth_curve(country_info[data_name].values)
     else:
