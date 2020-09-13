@@ -7,9 +7,11 @@
         "Italy",
         "Belgium",
         "Germany",
-        "Spain"
+        "Spain",
+        "Brazil",
+        "India"
     ],
     "min_new_cases": 100,
     "min_total_cases": 1000,
-    "date_last_update": "September 11, 2020"
+    "date_last_update": "September 13, 2020"
 }
