@@ -57,6 +57,8 @@ favorite_countries = [
     "Belgium",
     "Germany",
     "Spain",
+    "Brazil",
+    "India",
 ]
 
 
