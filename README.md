@@ -13,7 +13,7 @@ graphs and predictions for coronavirus daily cases and deaths.
 * Web:
     + Jekyll: static web pages generation
     + Plotly: javascript tool for data charts
-    + bootstrap: quick and nice rendering
+    + Bootstrap: quick and nice rendering
     + GitHub Actions: run the scripts and save data changes in a commit
 
 ## Miscellaneous Examples
