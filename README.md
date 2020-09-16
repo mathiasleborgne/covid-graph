@@ -51,7 +51,7 @@ Curve fitting uses :
 * `scipy.optimize.curve_fit`
 * or `pwlf` (piecewise linear fit, used on log scale)
 
-Based on this model, a 15-day prediction is inferred.
+Based on this model, a 15-days prediction is inferred.
 
 ## Update
 
