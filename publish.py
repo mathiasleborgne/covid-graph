@@ -20,6 +20,7 @@ def get_today_date_str(): #todo: use in main
     return datetime.date.today().strftime("%B %d, %Y")
 
 def get_date_last_update():
+    """ Date last update according to json info"""
     with open(global_file_name) as json_file:
         data = json.load(json_file)
         return data["date_last_update"]
