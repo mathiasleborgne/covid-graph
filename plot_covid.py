@@ -145,7 +145,7 @@ def export_data(country_info, data_name, country_population, smoothen=True):
     floats_array = floats_array / (country_population / 1.0e6)
     # decimals: rounding is done to lighten the JSON file,
     # in order to make website loading faster
-    return floats_array.round(decimals=1).tolist()
+    return floats_array.round(decimals=2).tolist()
 
 def export_data_prediction(country_info, country_all_results, data_name,
                            country_population):
