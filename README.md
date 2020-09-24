@@ -1,7 +1,7 @@
 # covid-graph
 
 Code for [covid-graph website](https://mathiasleborgne.github.io/covid-graph/): 
-graphs and predictions for coronavirus daily cases and deaths.
+graphs and predictions for Covid-19 daily cases and deaths.
 
 ## Stack
 
