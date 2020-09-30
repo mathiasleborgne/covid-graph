@@ -33,6 +33,10 @@ def is_outdated(former_date):
     return get_date_last_update() != former_date
 
 def git_push(is_dummy, do_push):
+    """ Push a commit for modifications of selected docs/ files
+            is_dummy: dummy commit name for test purpose
+            do_push: avoid real push, just simulate it
+    """
     branch_name = "dummy_branch" if is_dummy else "master"
     repo = Repo(PATH_OF_GIT_REPO)
     try:
