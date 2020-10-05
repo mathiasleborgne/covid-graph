@@ -7,6 +7,8 @@ from constants import *
 
 
 def get_all_countries_info_by_api():
+    """ Get dict for all countries info from JSON data received by API call to corona-api
+    """
     all_countries_command = "https://corona-api.com/countries"
     response = requests.get(all_countries_command)
     obj_response = response.json()
