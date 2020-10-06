@@ -16,6 +16,8 @@ def get_all_countries_info_by_api():
 
 
 def get_country_by_api(country_code):
+    """ Get info as df for a single country by API request
+    """
     country_command = "http://corona-api.com/countries/{}".format(country_code)
     response = requests.get(country_command)
     obj_response = response.json()
