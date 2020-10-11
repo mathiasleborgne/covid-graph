@@ -35,6 +35,8 @@ def save_xlsx(xlsx_url, file_name_output):
             handle.write(data)
 
 def fetch_excel(url_input, file_name_output):
+    """ Save Excel file from url
+    """
     html_text = get_html_text(url_input)
     xlsx_url = get_xlsx_url(html_text)
     save_xlsx(xlsx_url, file_name_output)
