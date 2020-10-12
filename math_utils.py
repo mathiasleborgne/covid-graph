@@ -10,6 +10,8 @@ import pwlf  # https://jekel.me/piecewise_linear_fit_py/
 # math utils -----------------------
 
 def shift(xs, n):
+    """ Shift a numpy array of n steps (n>=0 or n<0)
+    """
     if n >= 0:
         return np.r_[np.full(n, np.nan), xs[:-n]]
     else:
