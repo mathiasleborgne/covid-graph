@@ -44,6 +44,8 @@ def mean_absolute_log_error_norm(X, Y):
     return mean_absolute_error_norm(log_no_nan(X), log_no_nan(Y))
 
 def get_float_index(country_info_ranged):
+    """ Transforms a date index into a np array in [0;1] to be usable by regression algorithms
+    """
     return np.linspace(0, 1, len(country_info_ranged.index))
 
 # models functions  ---------------------
