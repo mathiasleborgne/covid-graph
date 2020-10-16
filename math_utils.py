@@ -51,6 +51,8 @@ def get_float_index(country_info_ranged):
 # models functions  ---------------------
 
 def logistics_full(x, a, b, l_max):
+    """ Logistics function with all parameters. Can process np arrays. 
+    """
     return l_max/(1+np.exp(a*x+b))
 
 def logistics_exp_full(x, a_log, b_log, a_exp, b_exp, l_max, argmax_float):
