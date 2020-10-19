@@ -154,6 +154,8 @@ def predict_pwlf(country_data_series, index_float, index_float_extended, number_
     slopes = pwlf_fitter.calc_slopes()
 
     def predict_on_index(index_as_float):
+        """ Make piecewise linear fit prediction on log space, then translate back to linear space
+        """
         x_hat = np.linspace(index_as_float.min(), index_as_float.max(), len(index_as_float))
         prediction_log = pwlf_fitter.predict(x_hat) + y_0  # adding back y[0] after setting y[0] = 0. previously
         # print(len(country_data_series[:first_non_zero] + np.exp(prediction_log)))
