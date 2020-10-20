@@ -38,6 +38,8 @@ def mean_absolute_error_norm(X, Y):
     return mean_absolute_error(X, Y)/ np.mean(X) * 100
 
 def log_no_nan(X):
+    """ Log of max(signal, 1) to avoid NaNs in output
+    """
     return np.log(np.maximum(X, 0.*X +1)) #todo: ones?
 
 def mean_absolute_log_error_norm(X, Y):
