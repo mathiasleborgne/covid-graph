@@ -35,8 +35,9 @@ def smooth_max(country_info, data_name):
     return max_y, argmax_y
 
 def mean_absolute_error_norm(X, Y):
-    """ mean absolute error between 2 signals, normalized by 1st signal's average
+    """ mean absolute error between 2 signals, normalized by 1st signal's average, in pct
     """
+    # todo: norm is not symetric
     return mean_absolute_error(X, Y)/ np.mean(X) * 100
 
 def log_no_nan(X):
