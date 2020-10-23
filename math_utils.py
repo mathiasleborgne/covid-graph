@@ -119,6 +119,8 @@ def get_applied_func(prediction_type, country_info, data_name):
         return exponential_full
 
 def series_to_float(data_series):
+    """ Convert pandas data series to numpy float array
+    """
     return data_series.to_numpy(dtype=np.float32).reshape(-1, 1).ravel()
 
 
