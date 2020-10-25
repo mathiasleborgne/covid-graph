@@ -86,6 +86,8 @@ def logistics_linear_full(x, a_log1, b_log1, a_lin, l_max, argmax_float):
 
 
 def exponential_full(x, a, b):
+    """ standard exponential function, works on arrays
+    """
     return np.exp(a*x+b)
 
 
