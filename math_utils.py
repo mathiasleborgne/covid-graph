@@ -127,6 +127,8 @@ def series_to_float(data_series):
 
 
 def quick_prediction_plot(country_data, index_float, index_float_extended, prediction):
+    """ Lightweight utility function to plot data vs prediction
+    """
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plt.plot(index_float, country_data)
