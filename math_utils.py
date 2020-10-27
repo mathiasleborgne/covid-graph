@@ -140,6 +140,8 @@ def quick_prediction_plot(country_data, index_float, index_float_extended, predi
 # piecewise linear fit in log space ------------------------------------
 
 def is_post_peak_slopes(slopes):
+    """ Detect if slopes look like a rebound after à peak
+    """
     # print("slopes 0:{} 1:{}".format(slopes[0], slopes[1]))
     if len(slopes) == 3 or len(slopes) == 4:
         is_rebound = slopes[0] > 0. and slopes[1] < 0. and slopes[1] < slopes[2]
