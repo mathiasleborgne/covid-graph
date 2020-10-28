@@ -18,6 +18,8 @@ def shift(xs, n):
         return np.r_[xs[-n:], np.full(-n, np.nan)]
 
 def smooth_curve(y, n_pts_box=default_smoothing_length):
+    """ smoothen a np array
+    """
     # n_pts_box: width of the window
     box = np.ones(n_pts_box)/n_pts_box
     y_smooth = np.convolve(y, box, mode='same')
