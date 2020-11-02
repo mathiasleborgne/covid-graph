@@ -7,6 +7,8 @@ from constants import number_days_future_default
 
 # parser -------------------------------------------
 def get_args():
+    """ define parser, read arguments and return them
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--reload", help="reload xlsx", action="store_true")
     parser.add_argument("--start_date", help="Date in format 2020-3-1", default=None)
