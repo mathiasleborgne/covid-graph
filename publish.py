@@ -1,4 +1,4 @@
-""" Push data update as commit, to be used in artifacts
+""" Push data update as commit, to be used in github actions
 """
 
 from git import Repo, exc
@@ -28,6 +28,9 @@ def get_date_last_update():
 
 # check_today
 def is_outdated(former_date):
+    """ check if the former date is the date of last update, 
+        to avoid endless update loop... actually github bots can't push, so this is not useful
+    """
     if former_date is None:
         return True
     return get_date_last_update() != former_date
