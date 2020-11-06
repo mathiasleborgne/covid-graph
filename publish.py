@@ -59,7 +59,7 @@ def git_push(is_dummy, do_push):
         print("Pushed {}".format(commit_message))
 
 def push_if_outdated(do_push, former_date):
-    # pushing even of not outdated, because github bots won't run the action 
+    # todo: change name, cause it's pushing even of not outdated, because github bots won't run the action 
     # if is_outdated(former_date):
     git_push(False, do_push)
     # else:
