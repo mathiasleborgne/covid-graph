@@ -58,7 +58,7 @@ def make_prediction_error_growth(X, X_extended, Y, prediction_type, applied_func
     return Y_pred, reg_error_pct, daily_growth_pct
 
 def add_linear_regression_log_and_prediction(
-    country_info, data_name, applied_func, prediction_type):
+        country_info, data_name, applied_func, prediction_type):
     """ preprocess data for prediction (extend range, index as floats) 
         Pack the results in a JSON file 
     """
