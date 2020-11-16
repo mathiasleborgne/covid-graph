@@ -95,7 +95,8 @@ class DataFetcher(object):
 
 
 class FakeArgs(object):
-
+    """ Class used to mock arguments in tests, as args are needed to initiate the class above
+    """
     reload = False
     days_predict = 10
 
