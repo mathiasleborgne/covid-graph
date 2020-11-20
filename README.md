@@ -10,7 +10,7 @@ graphs and predictions for Covid-19 daily cases and deaths.
     + pandas: containers for data
     + numpy/pwlf: curve_fitting and other utilities
     + gitpython: automatic commits for update.
-* Web:
+* Web, data, CI:
     + Jekyll: static web pages generation
     + Plotly: javascript tool for data charts
     + Bootstrap: quick and nice rendering
