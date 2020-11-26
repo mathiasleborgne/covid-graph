@@ -74,6 +74,7 @@ class APIFetcher(DataFetcher):
         return get_country_by_api(self.country_code_dict[country_name])
 
     def get_country_population(self, country_name):
+        """ inherited """
         return self.populations_dict[country_name]
 
 if __name__ == '__main__':
