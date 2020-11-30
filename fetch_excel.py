@@ -110,6 +110,8 @@ class ExcelFetcher(DataFetcher):
         # countries_population_dict = dict(zip(world_info.countriesAndTerritories, world_info.popData2018))
 
     def fetch_country_info(self, country_name):
+        """ override
+        """
         return self.world_info[
             self.world_info["countriesAndTerritories"].isin([country_name])]
 
