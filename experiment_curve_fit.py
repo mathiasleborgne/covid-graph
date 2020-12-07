@@ -1,3 +1,6 @@
+""" Playing with scipy's Curve fit. Not imported in production scripts
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
