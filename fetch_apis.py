@@ -35,7 +35,7 @@ def get_country_by_api(country_code):
 
 
 class APIFetcher(DataFetcher):
-    """docstring for APIFetcher"""
+    """DataFetcher class for API requests"""
 
     def __init__(self, args):
         super(APIFetcher, self).__init__(args)
