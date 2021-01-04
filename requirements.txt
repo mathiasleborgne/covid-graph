@@ -7,3 +7,4 @@ sklearn
 xlrd >= 1.0.0
 gitpython
 pwlf
+openpyxl
