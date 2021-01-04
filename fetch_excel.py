@@ -59,10 +59,10 @@ class ExcelFetcher(DataFetcher):
         if self.args.reload:
             fetch_excel(url_input, file_name_output)
         try:
-            self.world_info = pd.read_excel(file_name_output)
+            self.world_info = pd.read_excel(file_name_output, engine='openpyxl')
         except FileNotFoundError as e:
             fetch_excel(url_input, file_name_output)
-            self.world_info = pd.read_excel(file_name_output)
+            self.world_info = pd.read_excel(file_name_output, engine='openpyxl')
 
         # Excel fields are:
         #    dateRep
