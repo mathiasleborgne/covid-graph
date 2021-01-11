@@ -1,3 +1,6 @@
+""" Experiments with pwlf library. Not used as dependency for production code.
+"""
+
 from pprint import pprint
 from fetch_data_class import FakeArgs
 from fetch_excel import ExcelFetcher
