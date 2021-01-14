@@ -49,7 +49,7 @@ The curves for daily new cases and deaths (per million inhabitants) are fit to a
 
 Curve fitting uses :
 * `scipy.optimize.curve_fit`
-* or `pwlf` (piecewise linear fit, used on log scale)
+* or `pwlf` (piecewise linear fit, used on logarithmic scale)
 
 Based on this model, a 15-days prediction is inferred.
 
