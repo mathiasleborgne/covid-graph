@@ -4,7 +4,7 @@ from math_utils import smooth_curve, get_error_with_smooth
 from constants import path_country_data_json
 import json
 
-""" handle several data fetcher 
+""" handle several data fetchers, select the best one 
 """
 
 def get_country_info_with_error(country_name, data_fetcher):
