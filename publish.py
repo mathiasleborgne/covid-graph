@@ -1,4 +1,4 @@
-""" Push data update as commit, to be used in github actions
+""" Push data update as commit, to be used in github actions to re-process and update predictions
 """
 
 from git import Repo, exc
