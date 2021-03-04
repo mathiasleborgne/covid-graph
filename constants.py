@@ -1,4 +1,4 @@
-""" Constants for plot_covid script, including parser default values, settings, etc
+""" Constants for plot_covid script, including parser default values, settings, etc.
 """
 
 import os
